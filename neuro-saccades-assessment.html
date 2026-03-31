@@ -686,6 +686,9 @@ window.showScreen = function(id){
     // Intro / report
     if(vc) vc.style.display='none';
     if(camIndicator) camIndicator.style.display='none';
+    // Hide the webgazer gaze dot
+    const gazeDot = document.getElementById('webgazerGazeDot');
+    if(gazeDot) gazeDot.style.display='none';
   }
 };
 
@@ -1230,6 +1233,7 @@ let selectedDifficulty = null;
 let selectedSymptom = null;
 
 function showSymptomPrompt(idx, result){
+  hideGazeDot();
   pendingResult = result;
   selectedDifficulty = null;
   selectedSymptom = null;
@@ -1312,8 +1316,14 @@ function generateClinicalNotes(r){
 }
 
 /* ========== SCREEN 5: REPORT ========== */
+function hideGazeDot(){
+  const gd = document.getElementById('webgazerGazeDot');
+  if(gd) gd.style.display='none';
+}
+
 function finishAssessment(){
   try{webgazer.pause();}catch(e){}
+  hideGazeDot();
   showScreen('report');
   renderReport();
   saveResult();
