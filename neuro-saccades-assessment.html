@@ -281,6 +281,46 @@ width:10px!important;height:10px!important;
 background:var(--accent)!important;opacity:.5!important;
 border:none!important;
 }
+/* Hide PIP on mobile — it covers content and phone isn't ideal for eye tracking */
+@media(max-width:767px){
+  #webgazerVideoContainer{display:none!important}
+  #webgazerGazeDot{display:none!important}
+}
+
+/* ---------- How-It-Works Steps ---------- */
+.how-steps{
+  display:flex;flex-direction:column;gap:10px;
+  max-width:460px;width:100%;text-align:left;
+}
+.how-step{
+  display:flex;align-items:flex-start;gap:12px;
+  font-size:.85rem;color:var(--muted);line-height:1.5;
+}
+.how-step .step-num{
+  flex-shrink:0;width:28px;height:28px;border-radius:50%;
+  background:var(--surface2);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-mono);font-size:.75rem;font-weight:700;color:var(--accent);
+}
+.how-step strong{color:var(--text)}
+
+/* ---------- Calibration Instructions ---------- */
+.calib-instructions{
+  position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
+  font-size:.8rem;color:var(--muted);text-align:center;
+  background:var(--surface);padding:10px 20px;border-radius:8px;border:1px solid var(--border);
+  z-index:10;max-width:400px;line-height:1.5;
+}
+
+/* ---------- Assessment Phase Banner ---------- */
+.phase-banner{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-size:1rem;color:var(--accent);font-weight:600;
+  text-align:center;opacity:0;transition:opacity .3s;z-index:10;
+  pointer-events:none;
+}
+.phase-banner.show{opacity:1}
+.phase-banner .phase-sub{font-size:.8rem;color:var(--muted);font-weight:400;margin-top:4px}
 </style>
 </head>
 <body>
@@ -291,8 +331,15 @@ border:none!important;
   <h1>NeuroGaze</h1>
   <p class="subtitle" style="font-size:1.1rem;color:var(--accent);font-weight:600;margin-top:-8px">Functional Saccadic Assessment Protocol</p>
   <p class="subtitle">This tool uses your camera to track eye movements across 10 clinical gaze zones. No video is recorded. All data stays on your device.</p>
+  <div class="how-steps">
+    <div class="how-step"><div class="step-num">1</div><div><strong>Camera Setup</strong> — Allow webcam access so we can track your eye movements.</div></div>
+    <div class="how-step"><div class="step-num">2</div><div><strong>Calibration</strong> — Click 9 dots on screen to train the eye tracker to your eyes.</div></div>
+    <div class="how-step"><div class="step-num">3</div><div><strong>10 Gaze Zones</strong> — A dot appears in different positions. Look at it and hold your gaze for 5 seconds per zone.</div></div>
+    <div class="how-step"><div class="step-num">4</div><div><strong>Feedback</strong> — After each zone, report any difficulty or symptoms you experienced.</div></div>
+    <div class="how-step"><div class="step-num">5</div><div><strong>Report</strong> — Get a detailed breakdown of your saccadic performance with exercise recommendations.</div></div>
+  </div>
   <div class="disclaimer">This is a screening tool, not a medical diagnosis. Consult a licensed practitioner for clinical interpretation.</div>
-  <div class="mobile-warn">For best results, use a laptop or desktop with a webcam. Minimum 768px width recommended.</div>
+  <div class="mobile-warn">For best results, use a laptop or desktop with a webcam. Mobile devices are not ideal for eye tracking.</div>
   <button class="btn" onclick="showScreen('camera-setup')">Begin Assessment</button>
   <button class="btn btn-sm btn-outline" id="viewPastBtn" style="display:none" onclick="loadPastResult()">View Last Result</button>
 </div>
@@ -301,6 +348,7 @@ border:none!important;
 <div id="camera-setup" class="screen">
   <h2>Camera Setup</h2>
   <p style="color:var(--muted);max-width:420px;text-align:center;line-height:1.6;font-size:.9rem">We need camera access to track your eye movements. No video is stored or transmitted.</p>
+  <p style="color:var(--text);max-width:420px;text-align:center;line-height:1.6;font-size:.85rem">Position yourself at arm's length from the screen. Center your face in the preview and keep your head still.</p>
   <div class="camera-box" id="cameraBox">
     <p style="color:var(--muted);font-size:.85rem" id="cameraPlaceholder">Camera preview will appear here</p>
   </div>
@@ -311,6 +359,7 @@ border:none!important;
 <!-- ============ SCREEN 3: CALIBRATION ============ -->
 <div id="calibration" class="screen">
   <div class="calib-progress" id="calibProgress">Calibrating: 0 of 9 points</div>
+  <div class="calib-instructions" id="calibInstructions">Look directly at each dot, then click it 3 times. Complete all 9 dots to calibrate the eye tracker.</div>
   <div class="calib-accuracy" id="calibAccuracy">
     <h3>Calibration Complete</h3>
     <div class="score" id="calibScore"></div>
@@ -324,6 +373,7 @@ border:none!important;
 <!-- ============ SCREEN 4: ASSESSMENT ============ -->
 <div id="assessment" class="screen">
   <div class="zone-label" id="zoneLabel"></div>
+  <div class="phase-banner" id="phaseBanner"><span id="phaseBannerText"></span><div class="phase-sub" id="phaseBannerSub"></div></div>
   <div class="fixation-cross" id="fixCross">+</div>
   <div class="target-dot" id="targetDot"></div>
   <div class="zone-progress" id="zoneProgress"></div>
@@ -646,6 +696,8 @@ function showCalibResult(offsets){
   else{label='Poor (~'+Math.round(avgOffset)+'px offset)';cls='poor';}
 
   document.getElementById('calibProgress').textContent = 'Calibration complete!';
+  const calibInstr = document.getElementById('calibInstructions');
+  if(calibInstr) calibInstr.style.display = 'none';
   scoreEl.textContent = label;
   scoreEl.className = 'score ' + cls;
   accEl.style.display='block';
@@ -658,11 +710,25 @@ window.startAssessment = function(){
   showScreen('assessment');
   currentZoneIndex = 0;
   assessmentData = [];
+  shownInstructionTypes.clear();
   runZone(0);
 };
 
 /* Zone instructions for special zones */
+/* Zone instructions — keyed by zone type so we show once per category */
 const ZONE_INSTRUCTIONS = {
+  'Horizontal': {
+    title: 'Horizontal Saccades',
+    text: 'A glowing dot will appear to the far left or right of the screen. Look at the center cross first, then shift your gaze to the dot as quickly as you can. Hold your gaze on it for 5 seconds.'
+  },
+  'Vertical': {
+    title: 'Vertical Saccades',
+    text: 'A dot will appear at the top or bottom of the screen. Look at the center cross first, then shift your gaze to the dot as quickly as you can. Hold steady for 5 seconds.'
+  },
+  'Diagonal': {
+    title: 'Diagonal Saccades',
+    text: 'A dot will appear in a corner of the screen. Look at the center cross first, then move your eyes diagonally to the dot. Hold for 5 seconds. You will do all 4 corners.'
+  },
   'Convergence / Near Point': {
     title: 'Convergence Test',
     text: 'A dot will appear at the top of the screen and slowly move toward the center. Follow it with your eyes and try to maintain single, clear vision as it approaches.'
@@ -672,6 +738,14 @@ const ZONE_INSTRUCTIONS = {
     text: 'A dot will appear on the LEFT side of the screen. Your task is to look in the OPPOSITE direction (to the RIGHT) as quickly as possible. Resist the urge to look at the dot.'
   }
 };
+const shownInstructionTypes = new Set();
+
+function getInstructionType(zoneName){
+  if(zoneName.startsWith('Horizontal')) return 'Horizontal';
+  if(zoneName.startsWith('Vertical')) return 'Vertical';
+  if(zoneName.startsWith('Diagonal')) return 'Diagonal';
+  return zoneName; // Convergence / Antisaccade match exactly
+}
 
 let instructionCallback = null;
 window.dismissInstruction = function(){
@@ -702,9 +776,11 @@ function runZone(idx){
   zoneGazeBuffer = [];
   latencyRecorded = false;
 
-  // Show instruction for special zones, then proceed
-  const instr = ZONE_INSTRUCTIONS[zone.name];
-  if(instr){
+  // Show instruction on the first zone of each type
+  const instrType = getInstructionType(zone.name);
+  const instr = ZONE_INSTRUCTIONS[instrType];
+  if(instr && !shownInstructionTypes.has(instrType)){
+    shownInstructionTypes.add(instrType);
     document.getElementById('zoneInstructionTitle').textContent = instr.title;
     document.getElementById('zoneInstructionText').textContent = instr.text;
     document.getElementById('zoneInstruction').classList.add('show');
@@ -714,11 +790,23 @@ function runZone(idx){
   }
 }
 
+function showPhaseBanner(text, sub){
+  const b = document.getElementById('phaseBanner');
+  document.getElementById('phaseBannerText').textContent = text;
+  document.getElementById('phaseBannerSub').textContent = sub || '';
+  b.classList.add('show');
+}
+function hidePhaseBanner(){
+  document.getElementById('phaseBanner').classList.remove('show');
+}
+
 function beginZonePhases(idx, zone, fixCross, targetDot, countdown){
   // Phase 1: Fixation (2s)
   fixCross.classList.add('show');
+  showPhaseBanner('Focus on the center cross', 'Keep your eyes still');
   setTimeout(()=>{
     fixCross.classList.remove('show');
+    hidePhaseBanner();
 
     // Phase 2: Target appears
     const pos = zone.getPos();
