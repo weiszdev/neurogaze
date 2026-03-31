@@ -255,8 +255,28 @@ border-top:1px solid var(--border);margin-top:8px;
 .report-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
 .json-export{font-family:var(--font-mono);font-size:.75rem;color:var(--accent);cursor:pointer;text-decoration:underline;background:none;border:none}
 
-/* ---------- Camera PIP ---------- */
-/* During camera-setup, video is reparented into .camera-box */
+/* ---------- Camera Header Strip ---------- */
+.camera-header{
+  position:fixed;top:0;left:0;width:100%;height:72px;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  display:none;align-items:center;justify-content:center;
+  z-index:900;gap:12px;padding:0 16px;
+}
+.camera-header.show{display:flex}
+.camera-header .cam-label{
+  font-family:var(--font-mono);font-size:.7rem;color:var(--muted);
+}
+.camera-header .cam-status-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--danger);
+  animation:camBlink 1.5s ease-in-out infinite;
+}
+.camera-header .cam-status-dot.active{background:var(--success);animation:none}
+@keyframes camBlink{0%,100%{opacity:1}50%{opacity:.3}}
+/* Offset screens when camera header is visible */
+body.cam-active .screen{padding-top:80px!important}
+body.cam-active #calibration .calib-dot{margin-top:0} /* dots positioned absolutely, no offset needed */
+
+/* Camera preview in setup screen */
 .camera-box #webgazerVideoContainer{
 position:relative!important;top:auto!important;left:auto!important;bottom:auto!important;right:auto!important;
 width:320px!important;height:240px!important;
@@ -265,7 +285,16 @@ border:none!important;z-index:1!important;opacity:1!important;
 }
 .camera-box #webgazerVideoFeed{width:320px!important;height:240px!important;object-fit:cover!important}
 .camera-box #webgazerFaceOverlay{width:320px!important;height:240px!important}
-/* PIP mode for calibration/assessment screens */
+/* Camera in header strip mode */
+.camera-header #webgazerVideoContainer{
+position:relative!important;top:auto!important;left:auto!important;bottom:auto!important;right:auto!important;
+width:80px!important;height:60px!important;
+border-radius:8px!important;overflow:hidden!important;
+border:1px solid var(--accent)!important;z-index:1!important;opacity:1!important;
+}
+.camera-header #webgazerVideoFeed{width:80px!important;height:60px!important;object-fit:cover!important}
+.camera-header #webgazerFaceOverlay{width:80px!important;height:60px!important}
+/* Fallback PIP (desktop only, non-header screens) */
 #webgazerVideoContainer{
 position:fixed!important;bottom:12px!important;right:12px!important;
 width:160px!important;height:120px!important;
@@ -281,9 +310,8 @@ width:10px!important;height:10px!important;
 background:var(--accent)!important;opacity:.5!important;
 border:none!important;
 }
-/* Hide PIP on mobile — it covers content and phone isn't ideal for eye tracking */
+/* Mobile: hide gaze dot (too jittery) */
 @media(max-width:767px){
-  #webgazerVideoContainer{display:none!important}
   #webgazerGazeDot{display:none!important}
 }
 
@@ -321,9 +349,38 @@ border:none!important;
 }
 .phase-banner.show{opacity:1}
 .phase-banner .phase-sub{font-size:.8rem;color:var(--muted);font-weight:400;margin-top:4px}
+
+/* ---------- Cross-Lateral Exercises ---------- */
+.cross-lateral{
+  width:100%;max-width:800px;background:var(--surface);
+  border:1px solid var(--border);border-radius:12px;padding:24px;
+}
+.cross-lateral h3{font-size:1.1rem;margin-bottom:6px;color:var(--accent2)}
+.cross-lateral .cl-desc{font-size:.82rem;color:var(--muted);line-height:1.5;margin-bottom:16px}
+.cl-exercise-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.cl-card{
+  background:var(--surface2);border:1px solid var(--border);border-radius:10px;
+  padding:16px;text-align:center;
+}
+.cl-card .cl-arrow{font-size:2.8rem;margin-bottom:6px;line-height:1}
+.cl-card .cl-direction{font-family:var(--font-mono);font-size:.8rem;font-weight:700;color:var(--accent);margin-bottom:6px}
+.cl-card .cl-action{font-size:.8rem;color:var(--text);line-height:1.4}
+.cl-card .cl-action strong{color:var(--accent2)}
+.cl-sets{font-family:var(--font-mono);font-size:.78rem;color:var(--muted);margin-top:14px;text-align:center}
+.cl-how{
+  font-size:.82rem;color:var(--text);line-height:1.6;margin-top:14px;
+  padding:12px;background:rgba(124,58,237,.06);border-radius:8px;
+  border-left:3px solid var(--accent2);
+}
 </style>
 </head>
 <body>
+
+<!-- ============ CAMERA HEADER STRIP ============ -->
+<div class="camera-header" id="cameraHeader">
+  <div class="cam-status-dot" id="camDot"></div>
+  <span class="cam-label" id="camLabel">Camera</span>
+</div>
 
 <!-- ============ SCREEN 1: INTRO ============ -->
 <div id="intro" class="screen active">
@@ -353,6 +410,7 @@ border:none!important;
     <p style="color:var(--muted);font-size:.85rem" id="cameraPlaceholder">Camera preview will appear here</p>
   </div>
   <div class="camera-status detecting" id="cameraStatus">Waiting for camera...</div>
+  <button class="btn btn-sm btn-outline" id="cameraRetryBtn" style="display:none" onclick="retryCamera()">Retry Camera</button>
   <button class="btn" id="cameraNextBtn" disabled onclick="showScreen('calibration');startCalibration()">Continue to Calibration</button>
 </div>
 
@@ -424,6 +482,7 @@ border:none!important;
   </div>
   <div class="zone-cards" id="zoneCards"></div>
   <div class="prescription" id="prescription"></div>
+  <div class="cross-lateral" id="crossLateral"></div>
   <div class="report-actions">
     <button class="btn btn-sm" onclick="window.print()">Print / Save as PDF</button>
     <button class="json-export" onclick="exportJSON()">Export JSON for Practitioner</button>
@@ -491,42 +550,114 @@ window.showScreen = function(id){
   document.getElementById(id).classList.add('active');
   currentScreen = id;
   if(id==='camera-setup') initCamera();
-  // Move video back to body for PIP mode when leaving camera-setup
-  if(id!=='camera-setup'){
-    const vc = document.getElementById('webgazerVideoContainer');
-    if(vc && vc.parentElement && vc.parentElement.id==='cameraBox') document.body.appendChild(vc);
-  }
-  // Hide PIP on report screen
-  if(id==='report'){
-    const vc = document.getElementById('webgazerVideoContainer');
-    if(vc) vc.style.display='none';
+
+  const header = document.getElementById('cameraHeader');
+  const vc = document.getElementById('webgazerVideoContainer');
+
+  if(id==='camera-setup'){
+    // Camera preview goes in the camera-box on setup screen
+    header.classList.remove('show');
+    document.body.classList.remove('cam-active');
+  } else if(id==='calibration' || id==='assessment'){
+    // Move video into header strip
+    if(vc){
+      header.appendChild(vc);
+      header.classList.add('show');
+      document.body.classList.add('cam-active');
+      document.getElementById('camDot').classList.add('active');
+      document.getElementById('camLabel').textContent = 'Tracking';
+    }
+  } else {
+    // Intro / report — hide header
+    header.classList.remove('show');
+    document.body.classList.remove('cam-active');
+    if(id==='report' && vc) vc.style.display='none';
   }
 };
 
 /* ========== SCREEN 2: CAMERA ========== */
+let cameraInitialized = false;
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
 function initCamera(){
-  try{
-    webgazer.params.showVideoPreview = true;
-    webgazer.params.showFaceOverlay = true;
-    webgazer.params.showGazeDot = true;
-    webgazer.setRegression('ridge');
-    webgazer.begin().then(()=>{
+  if(cameraInitialized) return;
+
+  // On iOS Safari, camera access often needs a user gesture.
+  // We first request getUserMedia directly to trigger the permission prompt,
+  // then pass the stream to WebGazer.
+  async function startWebGazer(retrying){
+    try{
+      // Pre-request camera on iOS to ensure permission prompt fires from user gesture
+      if(isIOS || retrying){
+        const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:320}, height:{ideal:240}}});
+        // Stop tracks — WebGazer will open its own stream
+        stream.getTracks().forEach(t=>t.stop());
+      }
+
+      webgazer.params.showVideoPreview = true;
+      webgazer.params.showFaceOverlay = true;
+      webgazer.params.showGazeDot = true;
+      webgazer.setRegression('ridge');
+
+      await webgazer.begin();
+      cameraInitialized = true;
       document.getElementById('cameraPlaceholder').style.display='none';
-      // Reparent the video container into camera-box so user sees preview there
+      document.getElementById('cameraRetryBtn').style.display='none';
+      // Reparent the video container into camera-box
       const vc = document.getElementById('webgazerVideoContainer');
       const box = document.getElementById('cameraBox');
       if(vc && box) box.appendChild(vc);
       updateCameraStatus('detecting','Position your face in the frame');
       pollFaceDetection();
-    }).catch(err=>{
-      updateCameraStatus('detecting','Camera access denied. Please allow camera and refresh.');
-      console.error(err);
-    });
-  }catch(e){
-    updateCameraStatus('detecting','WebGazer failed to initialize. Please refresh.');
-    console.error(e);
+    }catch(err){
+      console.error('Camera init error:', err);
+      document.getElementById('cameraRetryBtn').style.display='inline-block';
+      if(isIOS){
+        updateCameraStatus('detecting','Tap "Retry Camera" to activate. On iOS, you may need to allow camera access in Safari settings.');
+      } else {
+        updateCameraStatus('detecting','Camera access failed. Click "Retry Camera" or check browser permissions.');
+      }
+    }
   }
+
+  updateCameraStatus('detecting','Requesting camera access...');
+  startWebGazer(false);
 }
+
+window.retryCamera = function(){
+  cameraInitialized = false;
+  // Stop any existing webgazer instance
+  try{ webgazer.end(); }catch(e){}
+  updateCameraStatus('detecting','Retrying camera...');
+  document.getElementById('cameraRetryBtn').style.display='none';
+  // Small delay then retry — the button click itself is the user gesture iOS needs
+  setTimeout(()=>{
+    initCamera();
+    // Force re-init path
+    (async()=>{
+      try{
+        const stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}});
+        stream.getTracks().forEach(t=>t.stop());
+        webgazer.params.showVideoPreview = true;
+        webgazer.params.showFaceOverlay = true;
+        webgazer.params.showGazeDot = true;
+        webgazer.setRegression('ridge');
+        await webgazer.begin();
+        cameraInitialized = true;
+        document.getElementById('cameraPlaceholder').style.display='none';
+        const vc = document.getElementById('webgazerVideoContainer');
+        const box = document.getElementById('cameraBox');
+        if(vc && box) box.appendChild(vc);
+        updateCameraStatus('detecting','Position your face in the frame');
+        pollFaceDetection();
+      }catch(e){
+        console.error('Retry failed:',e);
+        document.getElementById('cameraRetryBtn').style.display='inline-block';
+        updateCameraStatus('detecting','Still unable to access camera. Check browser permissions and try again.');
+      }
+    })();
+  },300);
+};
 
 function pollFaceDetection(){
   const check = setInterval(()=>{
@@ -1253,6 +1384,72 @@ function renderPrescription(totalScore){
     <h3>Exercise Prescription</h3>
     <span class="tier-label ${tierCls}">${tier}</span>
     ${exercises.map(e=>`<div class="rx-item"><span class="rx-name">${e.name}</span> — ${e.desc}</div>`).join('')}
+  `;
+
+  // Render cross-lateral drills
+  renderCrossLateral(totalScore);
+}
+
+/* ========== CROSS-LATERAL BRAIN RESET EXERCISES ========== */
+function renderCrossLateral(totalScore){
+  const container = document.getElementById('crossLateral');
+
+  // Build exercise sequence based on weak zones
+  const weakLeft = assessmentData.some(r=>r.score<7 && (r.zone.includes('Left')));
+  const weakRight = assessmentData.some(r=>r.score<7 && (r.zone.includes('Right')));
+  const weakUp = assessmentData.some(r=>r.score<7 && (r.zone.includes('Up')||r.zone.includes('Upper')));
+  const weakDown = assessmentData.some(r=>r.score<7 && (r.zone.includes('Down')||r.zone.includes('Lower')));
+
+  // Cross-lateral drills: arrow shows direction, user lifts OPPOSITE arm + knee
+  const drills = [];
+
+  // Always include basic cross-crawl
+  drills.push({arrow:'&#x2B06;&#xFE0F;', dir:'Arrow: UP', action:'Lift <strong>left arm</strong> + <strong>right knee</strong>'});
+  drills.push({arrow:'&#x2B07;&#xFE0F;', dir:'Arrow: DOWN', action:'Lift <strong>right arm</strong> + <strong>left knee</strong>'});
+  drills.push({arrow:'&#x2B05;&#xFE0F;', dir:'Arrow: LEFT', action:'Lift <strong>right arm</strong> + <strong>right knee</strong> (contralateral)'});
+  drills.push({arrow:'&#x27A1;&#xFE0F;', dir:'Arrow: RIGHT', action:'Lift <strong>left arm</strong> + <strong>left knee</strong> (contralateral)'});
+
+  // Add diagonal drills if diagonal zones were weak
+  if(weakLeft || weakUp){
+    drills.push({arrow:'&#x2196;&#xFE0F;', dir:'Arrow: UP-LEFT', action:'Lift <strong>right arm</strong> overhead + <strong>left knee</strong> up'});
+  }
+  if(weakRight || weakUp){
+    drills.push({arrow:'&#x2197;&#xFE0F;', dir:'Arrow: UP-RIGHT', action:'Lift <strong>left arm</strong> overhead + <strong>right knee</strong> up'});
+  }
+  if(weakLeft || weakDown){
+    drills.push({arrow:'&#x2199;&#xFE0F;', dir:'Arrow: DOWN-LEFT', action:'Touch <strong>right hand</strong> to <strong>left knee</strong> (cross-body)'});
+  }
+  if(weakRight || weakDown){
+    drills.push({arrow:'&#x2198;&#xFE0F;', dir:'Arrow: DOWN-RIGHT', action:'Touch <strong>left hand</strong> to <strong>right knee</strong> (cross-body)'});
+  }
+
+  let sets, tempo;
+  if(totalScore >= 80){ sets = '2 sets of 10 reps'; tempo = 'moderate pace'; }
+  else if(totalScore >= 50){ sets = '3 sets of 12 reps'; tempo = 'slow, controlled pace'; }
+  else { sets = '4 sets of 15 reps'; tempo = 'slow pace, focus on coordination'; }
+
+  container.innerHTML = `
+    <h3>Cross-Lateral Brain Reset Drills</h3>
+    <div class="cl-desc">
+      These contralateral movement exercises activate both brain hemispheres and improve neural integration.
+      An arrow indicates a direction — perform the <strong>opposite</strong> movement with your arm and knee to create cross-body coordination.
+    </div>
+    <div class="cl-exercise-grid">
+      ${drills.map(d=>`
+        <div class="cl-card">
+          <div class="cl-arrow">${d.arrow}</div>
+          <div class="cl-direction">${d.dir}</div>
+          <div class="cl-action">${d.action}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="cl-sets">${sets} each direction &middot; ${tempo}</div>
+    <div class="cl-how">
+      <strong>How to perform:</strong> Stand with feet shoulder-width apart. When you see an arrow direction,
+      lift the opposite arm and opposite knee simultaneously. Hold for 1 second, return to standing, then move
+      to the next direction. This cross-body pattern helps reset left-right brain communication and can improve
+      saccadic control over time. Perform these drills 2x daily, ideally before the eye exercises above.
+    </div>
   `;
 }
 
