@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuroGaze — Functional Saccadic Assessment</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg:#060a14;--surface:#0d1425;--surface2:#131d30;--border:#1e2d45;
+--accent:#00e5ff;--accent2:#7c3aed;--warn:#f59e0b;--danger:#ef4444;
+--success:#10b981;--text:#e2e8f0;--muted:#64748b;
+--font-head:'Syne',sans-serif;--font-mono:'Space Mono',monospace;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:var(--font-head)}
+body{
+background-image:
+linear-gradient(rgba(0,229,255,.03) 1px,transparent 1px),
+linear-gradient(90deg,rgba(0,229,255,.03) 1px,transparent 1px);
+background-size:40px 40px;
+}
+
+/* ---------- Utility ---------- */
+.screen{display:none;width:100%;height:100%;position:absolute;top:0;left:0;flex-direction:column;align-items:center;justify-content:center}
+.screen.active{display:flex}
+.btn{
+font-family:var(--font-head);font-weight:600;font-size:1rem;
+padding:14px 36px;border:none;border-radius:12px;cursor:pointer;
+background:linear-gradient(135deg,var(--accent),var(--accent2));
+color:#fff;transition:transform .15s,box-shadow .15s;
+box-shadow:0 0 20px rgba(0,229,255,.25);
+}
+.btn:hover{transform:translateY(-2px);box-shadow:0 0 30px rgba(0,229,255,.4)}
+.btn:active{transform:translateY(0)}
+.btn-sm{padding:10px 24px;font-size:.85rem}
+.btn-outline{
+background:transparent;border:2px solid var(--accent);color:var(--accent);
+box-shadow:none;
+}
+.btn-outline:hover{background:rgba(0,229,255,.1);box-shadow:0 0 15px rgba(0,229,255,.15)}
+.mono{font-family:var(--font-mono)}
+
+/* ---------- Screen 1: Intro ---------- */
+#intro{text-align:center;gap:24px;padding:40px}
+.logo-ring{
+width:100px;height:100px;border-radius:50%;
+border:3px solid var(--accent);
+display:flex;align-items:center;justify-content:center;
+animation:ringPulse 2.5s ease-in-out infinite;
+box-shadow:0 0 30px rgba(0,229,255,.3),inset 0 0 20px rgba(0,229,255,.1);
+}
+.logo-eye{
+width:40px;height:40px;border-radius:50%;
+background:radial-gradient(circle at 55% 45%,var(--accent) 30%,var(--accent2) 100%);
+box-shadow:0 0 15px var(--accent);
+animation:eyeMove 4s ease-in-out infinite;
+}
+@keyframes ringPulse{0%,100%{transform:scale(1);border-color:var(--accent)}50%{transform:scale(1.06);border-color:var(--accent2)}}
+@keyframes eyeMove{0%,100%{transform:translate(0,0)}25%{transform:translate(6px,-3px)}50%{transform:translate(-4px,2px)}75%{transform:translate(3px,4px)}}
+#intro h1{font-size:2.6rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-1px}
+#intro .subtitle{font-size:1.05rem;color:var(--muted);max-width:500px;line-height:1.6}
+#intro .disclaimer{font-size:.75rem;color:var(--muted);max-width:480px;line-height:1.5;border:1px solid var(--border);border-radius:8px;padding:12px 16px;background:var(--surface)}
+.mobile-warn{display:none;color:var(--warn);font-size:.85rem;padding:8px 16px;border:1px solid var(--warn);border-radius:8px;margin-top:8px}
+@media(max-width:767px){.mobile-warn{display:block}}
+
+/* ---------- Screen 2: Camera ---------- */
+#camera-setup{text-align:center;gap:20px;padding:40px}
+#camera-setup h2{font-size:1.8rem;font-weight:700}
+.camera-box{
+width:320px;height:240px;border-radius:16px;overflow:hidden;
+border:2px solid var(--border);background:var(--surface);
+position:relative;display:flex;align-items:center;justify-content:center;
+}
+.camera-status{
+font-family:var(--font-mono);font-size:.9rem;padding:8px 16px;
+border-radius:8px;transition:all .3s;
+}
+.camera-status.detecting{color:var(--warn);border:1px solid var(--warn)}
+.camera-status.detected{color:var(--success);border:1px solid var(--success)}
+
+/* ---------- Screen 3: Calibration ---------- */
+#calibration{background:var(--bg);cursor:crosshair}
+.calib-progress{
+position:absolute;top:30px;left:50%;transform:translateX(-50%);
+font-family:var(--font-mono);font-size:.9rem;color:var(--muted);
+background:var(--surface);padding:8px 20px;border-radius:8px;border:1px solid var(--border);
+z-index:10;
+}
+.calib-dot{
+position:absolute;width:28px;height:28px;border-radius:50%;
+background:var(--surface2);border:2px solid var(--accent);
+cursor:pointer;transform:translate(-50%,-50%);
+transition:background .2s,box-shadow .2s,transform .15s;
+z-index:5;
+}
+.calib-dot .fill{
+width:100%;height:100%;border-radius:50%;
+background:var(--accent);transform:scale(0);
+transition:transform .3s;
+}
+.calib-dot.done{border-color:var(--success);pointer-events:none}
+.calib-dot.done .fill{background:var(--success);transform:scale(1)}
+.calib-dot:hover{transform:translate(-50%,-50%) scale(1.15);box-shadow:0 0 15px rgba(0,229,255,.4)}
+.calib-accuracy{
+position:absolute;bottom:60px;left:50%;transform:translateX(-50%);
+text-align:center;z-index:10;display:none;
+background:var(--surface);padding:16px 28px;border-radius:12px;border:1px solid var(--border);
+}
+.calib-accuracy h3{font-size:1.1rem;margin-bottom:8px}
+.calib-accuracy .score{font-family:var(--font-mono);font-size:1.4rem;font-weight:700}
+.calib-accuracy .score.good{color:var(--success)}
+.calib-accuracy .score.fair{color:var(--warn)}
+.calib-accuracy .score.poor{color:var(--danger)}
+
+/* ---------- Screen 4: Assessment ---------- */
+#assessment{background:#000;cursor:none}
+.fixation-cross{
+position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+color:var(--muted);font-size:32px;font-family:var(--font-mono);
+opacity:0;transition:opacity .3s;
+}
+.fixation-cross.show{opacity:1}
+.target-dot{
+position:absolute;width:20px;height:20px;border-radius:50%;
+background:var(--accent);transform:translate(-50%,-50%);
+box-shadow:0 0 20px var(--accent),0 0 40px rgba(0,229,255,.3);
+opacity:0;transition:opacity .2s;
+animation:targetPulse 1.2s ease-in-out infinite;
+}
+.target-dot.show{opacity:1}
+@keyframes targetPulse{0%,100%{transform:translate(-50%,-50%) scale(1);box-shadow:0 0 20px var(--accent)}50%{transform:translate(-50%,-50%) scale(1.2);box-shadow:0 0 35px var(--accent),0 0 60px rgba(0,229,255,.2)}}
+.zone-label{
+position:absolute;top:20px;left:50%;transform:translateX(-50%);
+font-family:var(--font-mono);font-size:.8rem;color:var(--muted);
+background:rgba(13,20,37,.8);padding:6px 14px;border-radius:6px;
+z-index:10;
+}
+.zone-progress{
+position:absolute;bottom:20px;left:50%;transform:translateX(-50%);
+font-family:var(--font-mono);font-size:.75rem;color:var(--muted);
+z-index:10;
+}
+.zone-countdown{
+position:absolute;bottom:50px;left:50%;transform:translateX(-50%);
+font-family:var(--font-mono);font-size:1.1rem;color:var(--accent);
+z-index:10;opacity:0;transition:opacity .3s;
+}
+.zone-countdown.show{opacity:1}
+.zone-instruction-overlay{
+position:absolute;top:0;left:0;width:100%;height:100%;
+background:rgba(0,0,0,.85);display:none;
+flex-direction:column;align-items:center;justify-content:center;z-index:50;
+}
+.zone-instruction-overlay.show{display:flex}
+.zone-instruction-card{
+background:var(--surface);border:1px solid var(--border);border-radius:16px;
+padding:32px 40px;max-width:480px;text-align:center;
+}
+.zone-instruction-card h3{font-size:1.2rem;margin-bottom:12px;color:var(--accent)}
+.zone-instruction-card p{font-size:.9rem;color:var(--muted);line-height:1.6;margin-bottom:20px}
+
+/* ---------- Symptom Prompt ---------- */
+.symptom-overlay{
+position:fixed;top:0;left:0;width:100%;height:100%;
+background:rgba(6,10,20,.92);display:none;
+flex-direction:column;align-items:center;justify-content:center;
+z-index:100;gap:24px;
+}
+.symptom-overlay.show{display:flex}
+.symptom-overlay h3{font-size:1.2rem;color:var(--text)}
+.symptom-group{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.symptom-btn{
+font-family:var(--font-mono);font-size:.8rem;
+padding:10px 18px;border-radius:8px;cursor:pointer;
+border:1px solid var(--border);background:var(--surface);color:var(--text);
+transition:all .2s;
+}
+.symptom-btn:hover,.symptom-btn.selected{border-color:var(--accent);background:var(--surface2);color:var(--accent)}
+.symptom-btn.selected{box-shadow:0 0 10px rgba(0,229,255,.2)}
+
+/* ---------- Screen 5: Report ---------- */
+#report{
+overflow-y:auto;padding:40px 20px;align-items:center;
+justify-content:flex-start;gap:24px;
+}
+#report::-webkit-scrollbar{width:6px}
+#report::-webkit-scrollbar-track{background:var(--bg)}
+#report::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.report-header{text-align:center;width:100%;max-width:800px}
+.report-header h1{font-size:2rem;font-weight:800;margin-bottom:4px;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.report-header .datetime{font-family:var(--font-mono);font-size:.8rem;color:var(--muted)}
+.overall-badge{
+display:inline-flex;flex-direction:column;align-items:center;
+padding:20px 40px;border-radius:16px;border:2px solid var(--border);
+background:var(--surface);margin:8px auto;
+}
+.overall-badge .score-big{font-family:var(--font-mono);font-size:2.8rem;font-weight:700}
+.overall-badge .grade-label{font-size:.9rem;font-weight:600;margin-top:4px;padding:4px 16px;border-radius:20px}
+.grade-excellent{color:var(--success);border:1px solid var(--success);background:rgba(16,185,129,.1)}
+.grade-good{color:var(--accent);border:1px solid var(--accent);background:rgba(0,229,255,.1)}
+.grade-fair{color:var(--warn);border:1px solid var(--warn);background:rgba(245,158,11,.1)}
+.grade-poor{color:var(--danger);border:1px solid var(--danger);background:rgba(239,68,68,.1)}
+.zone-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;width:100%;max-width:900px}
+.zone-card{
+background:var(--surface);border:1px solid var(--border);border-radius:12px;
+padding:16px 20px;
+}
+.zone-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.zone-card-header h4{font-size:.95rem;font-weight:600}
+.zone-card .badge{
+font-family:var(--font-mono);font-size:.75rem;font-weight:700;
+padding:3px 10px;border-radius:12px;
+}
+.zone-card .metrics{font-family:var(--font-mono);font-size:.78rem;color:var(--muted);line-height:1.8}
+.zone-card .metrics span{color:var(--text)}
+.zone-card .clinical-note{
+font-size:.78rem;color:var(--warn);margin-top:8px;
+padding:8px 10px;background:rgba(245,158,11,.06);border-radius:6px;
+border-left:3px solid var(--warn);line-height:1.5;
+}
+
+/* ---------- Spider Chart ---------- */
+.chart-container{width:100%;max-width:500px;text-align:center}
+.chart-container h3{font-size:1.1rem;margin-bottom:12px}
+canvas#spiderChart{width:100%;max-width:460px;height:auto}
+
+/* ---------- Prescription ---------- */
+.prescription{
+width:100%;max-width:800px;background:var(--surface);
+border:1px solid var(--border);border-radius:12px;padding:24px;
+}
+.prescription h3{font-size:1.1rem;margin-bottom:12px;color:var(--accent)}
+.prescription .tier-label{
+font-family:var(--font-mono);font-size:.8rem;font-weight:700;
+display:inline-block;padding:4px 12px;border-radius:8px;margin-bottom:12px;
+}
+.tier-1{color:var(--success);border:1px solid var(--success);background:rgba(16,185,129,.1)}
+.tier-2{color:var(--warn);border:1px solid var(--warn);background:rgba(245,158,11,.1)}
+.tier-3{color:var(--danger);border:1px solid var(--danger);background:rgba(239,68,68,.1)}
+.rx-item{
+font-size:.85rem;color:var(--text);padding:6px 0;
+border-bottom:1px solid var(--border);line-height:1.5;
+}
+.rx-item:last-child{border-bottom:none}
+.rx-item .rx-name{font-weight:600;color:var(--accent)}
+
+.report-footer{
+text-align:center;width:100%;max-width:800px;padding:20px 0;
+font-size:.75rem;color:var(--muted);line-height:1.6;
+border-top:1px solid var(--border);margin-top:8px;
+}
+.report-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.json-export{font-family:var(--font-mono);font-size:.75rem;color:var(--accent);cursor:pointer;text-decoration:underline;background:none;border:none}
+
+/* ---------- Camera PIP ---------- */
+/* During camera-setup, video is reparented into .camera-box */
+.camera-box #webgazerVideoContainer{
+position:relative!important;top:auto!important;left:auto!important;bottom:auto!important;right:auto!important;
+width:320px!important;height:240px!important;
+border-radius:0!important;overflow:hidden!important;
+border:none!important;z-index:1!important;opacity:1!important;
+}
+.camera-box #webgazerVideoFeed{width:320px!important;height:240px!important;object-fit:cover!important}
+.camera-box #webgazerFaceOverlay{width:320px!important;height:240px!important}
+/* PIP mode for calibration/assessment screens */
+#webgazerVideoContainer{
+position:fixed!important;bottom:12px!important;right:12px!important;
+width:160px!important;height:120px!important;
+border-radius:10px!important;overflow:hidden!important;
+border:2px solid var(--accent)!important;
+z-index:1000!important;opacity:.85!important;
+}
+#webgazerVideoFeed{width:160px!important;height:120px!important;object-fit:cover!important}
+#webgazerFaceOverlay{width:160px!important;height:120px!important}
+#webgazerFaceFeedbackBox{display:none!important}
+#webgazerGazeDot{
+width:10px!important;height:10px!important;
+background:var(--accent)!important;opacity:.5!important;
+border:none!important;
+}
+</style>
+</head>
+<body>
+
+<!-- ============ SCREEN 1: INTRO ============ -->
+<div id="intro" class="screen active">
+  <div class="logo-ring"><div class="logo-eye"></div></div>
+  <h1>NeuroGaze</h1>
+  <p class="subtitle" style="font-size:1.1rem;color:var(--accent);font-weight:600;margin-top:-8px">Functional Saccadic Assessment Protocol</p>
+  <p class="subtitle">This tool uses your camera to track eye movements across 10 clinical gaze zones. No video is recorded. All data stays on your device.</p>
+  <div class="disclaimer">This is a screening tool, not a medical diagnosis. Consult a licensed practitioner for clinical interpretation.</div>
+  <div class="mobile-warn">For best results, use a laptop or desktop with a webcam. Minimum 768px width recommended.</div>
+  <button class="btn" onclick="showScreen('camera-setup')">Begin Assessment</button>
+  <button class="btn btn-sm btn-outline" id="viewPastBtn" style="display:none" onclick="loadPastResult()">View Last Result</button>
+</div>
+
+<!-- ============ SCREEN 2: CAMERA SETUP ============ -->
+<div id="camera-setup" class="screen">
+  <h2>Camera Setup</h2>
+  <p style="color:var(--muted);max-width:420px;text-align:center;line-height:1.6;font-size:.9rem">We need camera access to track your eye movements. No video is stored or transmitted.</p>
+  <div class="camera-box" id="cameraBox">
+    <p style="color:var(--muted);font-size:.85rem" id="cameraPlaceholder">Camera preview will appear here</p>
+  </div>
+  <div class="camera-status detecting" id="cameraStatus">Waiting for camera...</div>
+  <button class="btn" id="cameraNextBtn" disabled onclick="showScreen('calibration');startCalibration()">Continue to Calibration</button>
+</div>
+
+<!-- ============ SCREEN 3: CALIBRATION ============ -->
+<div id="calibration" class="screen">
+  <div class="calib-progress" id="calibProgress">Calibrating: 0 of 9 points</div>
+  <div class="calib-accuracy" id="calibAccuracy">
+    <h3>Calibration Complete</h3>
+    <div class="score" id="calibScore"></div>
+    <div style="margin-top:12px;display:flex;gap:10px;justify-content:center">
+      <button class="btn btn-sm btn-outline" id="recalibBtn" onclick="startCalibration()">Recalibrate</button>
+      <button class="btn btn-sm" id="startAssessBtn" onclick="startAssessment()">Start Assessment</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SCREEN 4: ASSESSMENT ============ -->
+<div id="assessment" class="screen">
+  <div class="zone-label" id="zoneLabel"></div>
+  <div class="fixation-cross" id="fixCross">+</div>
+  <div class="target-dot" id="targetDot"></div>
+  <div class="zone-progress" id="zoneProgress"></div>
+  <div class="zone-countdown" id="zoneCountdown"></div>
+  <!-- Zone instruction overlay -->
+  <div class="zone-instruction-overlay" id="zoneInstruction">
+    <div class="zone-instruction-card">
+      <h3 id="zoneInstructionTitle"></h3>
+      <p id="zoneInstructionText"></p>
+      <button class="btn btn-sm" onclick="dismissInstruction()">Ready</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SYMPTOM PROMPT ============ -->
+<div class="symptom-overlay" id="symptomOverlay">
+  <h3 id="symptomZoneTitle">Zone Feedback</h3>
+  <p style="color:var(--muted);font-size:.85rem">Rate your difficulty for this zone:</p>
+  <div class="symptom-group" id="difficultyGroup">
+    <button class="symptom-btn" data-val="None" onclick="selectDifficulty(this)">None</button>
+    <button class="symptom-btn" data-val="Mild" onclick="selectDifficulty(this)">Mild</button>
+    <button class="symptom-btn" data-val="Significant" onclick="selectDifficulty(this)">Significant</button>
+  </div>
+  <p style="color:var(--muted);font-size:.85rem;margin-top:8px">Any symptoms?</p>
+  <div class="symptom-group" id="symptomGroup">
+    <button class="symptom-btn" data-val="None" onclick="selectSymptom(this)">None</button>
+    <button class="symptom-btn" data-val="Headache" onclick="selectSymptom(this)">Headache</button>
+    <button class="symptom-btn" data-val="Dizziness" onclick="selectSymptom(this)">Dizziness</button>
+    <button class="symptom-btn" data-val="Double Vision" onclick="selectSymptom(this)">Double Vision</button>
+    <button class="symptom-btn" data-val="Nausea" onclick="selectSymptom(this)">Nausea</button>
+  </div>
+  <button class="btn btn-sm" id="symptomNextBtn" style="margin-top:12px" disabled onclick="submitSymptoms()">Next Zone</button>
+</div>
+
+<!-- ============ SCREEN 5: REPORT ============ -->
+<div id="report" class="screen">
+  <div class="report-header">
+    <h1>NeuroGaze Assessment Report</h1>
+    <div class="datetime mono" id="reportDatetime"></div>
+  </div>
+  <div class="overall-badge" id="overallBadge">
+    <div class="score-big" id="overallScore"></div>
+    <div class="grade-label" id="overallGrade"></div>
+  </div>
+  <div class="chart-container">
+    <h3>Zone Performance Map</h3>
+    <canvas id="spiderChart" width="460" height="460"></canvas>
+  </div>
+  <div class="zone-cards" id="zoneCards"></div>
+  <div class="prescription" id="prescription"></div>
+  <div class="report-actions">
+    <button class="btn btn-sm" onclick="window.print()">Print / Save as PDF</button>
+    <button class="json-export" onclick="exportJSON()">Export JSON for Practitioner</button>
+  </div>
+  <div class="report-footer">
+    Reassess in 4 weeks to track progress.<br>
+    This is a screening tool, not a medical diagnosis. Consult a licensed practitioner for clinical interpretation.<br>
+    NeuroGaze &mdash; Functional Saccadic Assessment Protocol
+  </div>
+</div>
+
+<!-- ============ PRINT STYLES ============ -->
+<style>
+@media print{
+  body{background:#fff!important;color:#000!important;background-image:none!important}
+  .screen{position:relative!important}
+  #webgazerVideoContainer,#webgazerGazeDot,.btn,.json-export,.report-actions{display:none!important}
+  .zone-card,.prescription,.overall-badge{border-color:#ccc!important;background:#f9f9f9!important}
+  .zone-card .clinical-note{background:#fff8e1!important}
+  *{color:#000!important;-webkit-text-fill-color:#000!important}
+  .score-big,.badge,.grade-label{-webkit-text-fill-color:initial!important}
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/webgazer@2.1.0/dist/webgazer.min.js"></script>
+<script>
+(function(){
+"use strict";
+
+/* ========== STATE ========== */
+let currentScreen = 'intro';
+const calibClicks = {};
+let calibPointsDone = 0;
+const CALIB_REQUIRED = 3;
+let gazeListener = null;
+let assessmentData = [];
+let currentZoneIndex = 0;
+let zoneGazeBuffer = [];
+let zoneStartTime = 0;
+let targetAppearedTime = 0;
+let latencyRecorded = false;
+let faceDetectedTimer = null;
+let faceReady = false;
+
+/* Zone definitions */
+const ZONES = [
+  {name:"Horizontal Left",       getPos:()=>({x:w()*0.08, y:h()*0.5})},
+  {name:"Horizontal Right",      getPos:()=>({x:w()*0.92, y:h()*0.5})},
+  {name:"Vertical Up",           getPos:()=>({x:w()*0.5,  y:h()*0.08})},
+  {name:"Vertical Down",         getPos:()=>({x:w()*0.5,  y:h()*0.92})},
+  {name:"Diagonal Upper-Left",   getPos:()=>({x:w()*0.1,  y:h()*0.1})},
+  {name:"Diagonal Upper-Right",  getPos:()=>({x:w()*0.9,  y:h()*0.1})},
+  {name:"Diagonal Lower-Left",   getPos:()=>({x:w()*0.1,  y:h()*0.9})},
+  {name:"Diagonal Lower-Right",  getPos:()=>({x:w()*0.9,  y:h()*0.9})},
+  {name:"Convergence / Near Point", getPos:()=>({x:w()*0.5, y:h()*0.5}), convergence:true},
+  {name:"Antisaccade",           getPos:()=>({x:w()*0.15, y:h()*0.5}), antisaccade:true, lookPos:()=>({x:w()*0.85,y:h()*0.5})}
+];
+
+function w(){return window.innerWidth}
+function h(){return window.innerHeight}
+
+/* ========== NAVIGATION ========== */
+window.showScreen = function(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  currentScreen = id;
+  if(id==='camera-setup') initCamera();
+  // Move video back to body for PIP mode when leaving camera-setup
+  if(id!=='camera-setup'){
+    const vc = document.getElementById('webgazerVideoContainer');
+    if(vc && vc.parentElement && vc.parentElement.id==='cameraBox') document.body.appendChild(vc);
+  }
+  // Hide PIP on report screen
+  if(id==='report'){
+    const vc = document.getElementById('webgazerVideoContainer');
+    if(vc) vc.style.display='none';
+  }
+};
+
+/* ========== SCREEN 2: CAMERA ========== */
+function initCamera(){
+  try{
+    webgazer.params.showVideoPreview = true;
+    webgazer.params.showFaceOverlay = true;
+    webgazer.params.showGazeDot = true;
+    webgazer.setRegression('ridge');
+    webgazer.begin().then(()=>{
+      document.getElementById('cameraPlaceholder').style.display='none';
+      // Reparent the video container into camera-box so user sees preview there
+      const vc = document.getElementById('webgazerVideoContainer');
+      const box = document.getElementById('cameraBox');
+      if(vc && box) box.appendChild(vc);
+      updateCameraStatus('detecting','Position your face in the frame');
+      pollFaceDetection();
+    }).catch(err=>{
+      updateCameraStatus('detecting','Camera access denied. Please allow camera and refresh.');
+      console.error(err);
+    });
+  }catch(e){
+    updateCameraStatus('detecting','WebGazer failed to initialize. Please refresh.');
+    console.error(e);
+  }
+}
+
+function pollFaceDetection(){
+  const check = setInterval(()=>{
+    if(currentScreen !== 'camera-setup'){clearInterval(check);return;}
+    const tracker = webgazer.getTracker();
+    let faceFound = false;
+    try{
+      const videoEl = document.getElementById('webgazerVideoFeed');
+      if(videoEl && videoEl.readyState>=2){
+        // Check if webgazer is getting predictions (implies face detected)
+        const pred = webgazer.getCurrentPrediction();
+        if(pred && pred.x !== null){
+          faceFound = true;
+        }
+      }
+    }catch(e){}
+
+    if(faceFound && !faceReady){
+      updateCameraStatus('detecting','Face detected, hold still...');
+      if(!faceDetectedTimer){
+        faceDetectedTimer = setTimeout(()=>{
+          faceReady = true;
+          updateCameraStatus('detected','Face detected ✓');
+          document.getElementById('cameraNextBtn').disabled = false;
+        },2000);
+      }
+    } else if(!faceFound){
+      faceReady = false;
+      if(faceDetectedTimer){clearTimeout(faceDetectedTimer);faceDetectedTimer=null;}
+      updateCameraStatus('detecting','Position your face in the frame');
+      document.getElementById('cameraNextBtn').disabled = true;
+    }
+  },500);
+
+  // Fallback: enable after 6 seconds regardless
+  setTimeout(()=>{
+    if(!faceReady){
+      faceReady = true;
+      updateCameraStatus('detected','Ready ✓');
+      document.getElementById('cameraNextBtn').disabled = false;
+    }
+  },6000);
+}
+
+function updateCameraStatus(cls,txt){
+  const el = document.getElementById('cameraStatus');
+  el.className = 'camera-status ' + cls;
+  el.textContent = txt;
+}
+
+/* ========== SCREEN 3: CALIBRATION ========== */
+window.startCalibration = function(){
+  const cal = document.getElementById('calibration');
+  // Remove old dots
+  cal.querySelectorAll('.calib-dot').forEach(d=>d.remove());
+  document.getElementById('calibAccuracy').style.display='none';
+  calibPointsDone = 0;
+  Object.keys(calibClicks).forEach(k=>delete calibClicks[k]);
+  updateCalibProgress();
+
+  const positions = [];
+  for(let r=0;r<3;r++){
+    for(let c=0;c<3;c++){
+      positions.push({
+        x: 0.15 + c*0.35,
+        y: 0.15 + r*0.35
+      });
+    }
+  }
+
+  positions.forEach((p,i)=>{
+    const dot = document.createElement('div');
+    dot.className='calib-dot';
+    dot.style.left = (p.x*100)+'%';
+    dot.style.top = (p.y*100)+'%';
+    dot.innerHTML='<div class="fill"></div>';
+    dot.dataset.index = i;
+    calibClicks[i] = 0;
+    dot.addEventListener('click',function(){
+      calibClicks[i]++;
+      const fill = this.querySelector('.fill');
+      const pct = Math.min(calibClicks[i]/CALIB_REQUIRED, 1);
+      fill.style.transform = 'scale('+pct+')';
+      if(calibClicks[i] >= CALIB_REQUIRED && !this.classList.contains('done')){
+        this.classList.add('done');
+        calibPointsDone++;
+        updateCalibProgress();
+        if(calibPointsDone >= 9) finishCalibration();
+      }
+    });
+    cal.appendChild(dot);
+  });
+};
+
+function updateCalibProgress(){
+  document.getElementById('calibProgress').textContent = 'Calibrating: '+calibPointsDone+' of 9 points';
+}
+
+function finishCalibration(){
+  document.getElementById('calibProgress').textContent = 'Validating accuracy...';
+  // Remove mouse listeners so gaze predictions are pure eye-tracking
+  try{webgazer.removeMouseEventListeners();}catch(e){}
+
+  // Run a 5-point validation: show dots at known positions, measure gaze offset
+  const valPoints = [
+    {x:0.25,y:0.25},{x:0.75,y:0.25},{x:0.5,y:0.5},{x:0.25,y:0.75},{x:0.75,y:0.75}
+  ];
+  const cal = document.getElementById('calibration');
+  let valIndex = 0;
+  const offsets = [];
+
+  function runValidationPoint(){
+    if(valIndex >= valPoints.length){
+      showCalibResult(offsets);
+      return;
+    }
+    const p = valPoints[valIndex];
+    const px = p.x * w(), py = p.y * h();
+    // Show a validation dot
+    const vdot = document.createElement('div');
+    vdot.className = 'calib-dot done';
+    vdot.style.left = (p.x*100)+'%';
+    vdot.style.top = (p.y*100)+'%';
+    vdot.style.pointerEvents = 'none';
+    vdot.style.borderColor = 'var(--accent)';
+    vdot.innerHTML = '<div class="fill" style="background:var(--accent);transform:scale(1)"></div>';
+    cal.appendChild(vdot);
+
+    // Collect gaze samples for 1.2s
+    const samples = [];
+    const listener = function(data){
+      if(data) samples.push({x:data.x, y:data.y});
+    };
+    webgazer.setGazeListener(listener);
+
+    setTimeout(()=>{
+      webgazer.setGazeListener(null);
+      vdot.remove();
+      if(samples.length > 2){
+        // Use latter half for stable measurement
+        const half = Math.floor(samples.length/2);
+        let totalDist = 0;
+        for(let i=half;i<samples.length;i++){
+          totalDist += Math.hypot(samples[i].x - px, samples[i].y - py);
+        }
+        offsets.push(totalDist / (samples.length - half));
+      } else {
+        offsets.push(200); // no data fallback
+      }
+      valIndex++;
+      runValidationPoint();
+    },1200);
+  }
+
+  // Brief pause before validation starts
+  setTimeout(runValidationPoint, 500);
+}
+
+function showCalibResult(offsets){
+  const avgOffset = offsets.reduce((a,b)=>a+b,0) / offsets.length;
+  const accEl = document.getElementById('calibAccuracy');
+  const scoreEl = document.getElementById('calibScore');
+
+  let label, cls;
+  if(avgOffset < 80){label='Good (~'+Math.round(avgOffset)+'px offset)';cls='good';}
+  else if(avgOffset < 150){label='Fair (~'+Math.round(avgOffset)+'px offset)';cls='fair';}
+  else{label='Poor (~'+Math.round(avgOffset)+'px offset)';cls='poor';}
+
+  document.getElementById('calibProgress').textContent = 'Calibration complete!';
+  scoreEl.textContent = label;
+  scoreEl.className = 'score ' + cls;
+  accEl.style.display='block';
+
+  document.getElementById('recalibBtn').style.display = (cls==='poor') ? 'inline-block' : 'none';
+}
+
+/* ========== SCREEN 4: ASSESSMENT ========== */
+window.startAssessment = function(){
+  showScreen('assessment');
+  currentZoneIndex = 0;
+  assessmentData = [];
+  runZone(0);
+};
+
+/* Zone instructions for special zones */
+const ZONE_INSTRUCTIONS = {
+  'Convergence / Near Point': {
+    title: 'Convergence Test',
+    text: 'A dot will appear at the top of the screen and slowly move toward the center. Follow it with your eyes and try to maintain single, clear vision as it approaches.'
+  },
+  'Antisaccade': {
+    title: 'Antisaccade Test',
+    text: 'A dot will appear on the LEFT side of the screen. Your task is to look in the OPPOSITE direction (to the RIGHT) as quickly as possible. Resist the urge to look at the dot.'
+  }
+};
+
+let instructionCallback = null;
+window.dismissInstruction = function(){
+  document.getElementById('zoneInstruction').classList.remove('show');
+  if(instructionCallback) instructionCallback();
+  instructionCallback = null;
+};
+
+function runZone(idx){
+  if(idx >= ZONES.length){
+    finishAssessment();
+    return;
+  }
+  currentZoneIndex = idx;
+  const zone = ZONES[idx];
+  const label = document.getElementById('zoneLabel');
+  const fixCross = document.getElementById('fixCross');
+  const targetDot = document.getElementById('targetDot');
+  const progress = document.getElementById('zoneProgress');
+  const countdown = document.getElementById('zoneCountdown');
+
+  label.textContent = 'Zone '+(idx+1)+'/10: '+zone.name;
+  progress.textContent = (idx+1)+' of 10 zones';
+  fixCross.classList.remove('show');
+  targetDot.classList.remove('show');
+  countdown.classList.remove('show');
+  countdown.textContent = '';
+  zoneGazeBuffer = [];
+  latencyRecorded = false;
+
+  // Show instruction for special zones, then proceed
+  const instr = ZONE_INSTRUCTIONS[zone.name];
+  if(instr){
+    document.getElementById('zoneInstructionTitle').textContent = instr.title;
+    document.getElementById('zoneInstructionText').textContent = instr.text;
+    document.getElementById('zoneInstruction').classList.add('show');
+    instructionCallback = ()=> beginZonePhases(idx, zone, fixCross, targetDot, countdown);
+  } else {
+    beginZonePhases(idx, zone, fixCross, targetDot, countdown);
+  }
+}
+
+function beginZonePhases(idx, zone, fixCross, targetDot, countdown){
+  // Phase 1: Fixation (2s)
+  fixCross.classList.add('show');
+  setTimeout(()=>{
+    fixCross.classList.remove('show');
+
+    // Phase 2: Target appears
+    const pos = zone.getPos();
+    let tX = pos.x, tY = pos.y;
+    const holdDuration = 5000;
+
+    // Start countdown timer
+    let remaining = Math.ceil(holdDuration/1000);
+    countdown.textContent = remaining + 's';
+    countdown.classList.add('show');
+    const countdownInterval = setInterval(()=>{
+      remaining--;
+      if(remaining <= 0){
+        clearInterval(countdownInterval);
+        countdown.classList.remove('show');
+      } else {
+        countdown.textContent = remaining + 's';
+      }
+    },1000);
+
+    if(zone.convergence){
+      targetDot.style.left = w()*0.5+'px';
+      targetDot.style.top = h()*0.1+'px';
+      targetDot.classList.add('show');
+      targetAppearedTime = performance.now();
+      startGazeCollection(tX, tY);
+
+      let step = 0;
+      const convInterval = setInterval(()=>{
+        step++;
+        const pct = Math.min(step/30, 1);
+        const curY = h()*0.1 + (h()*0.4)*pct;
+        targetDot.style.top = curY+'px';
+        if(pct>=1) clearInterval(convInterval);
+      },100);
+
+      setTimeout(()=>blinkAndFinishZone(idx, tX, tY), holdDuration);
+    } else if(zone.antisaccade){
+      targetDot.style.left = tX+'px';
+      targetDot.style.top = tY+'px';
+      targetDot.classList.add('show');
+      targetAppearedTime = performance.now();
+      const lookTarget = zone.lookPos();
+      startGazeCollection(lookTarget.x, lookTarget.y);
+      setTimeout(()=>blinkAndFinishZone(idx, lookTarget.x, lookTarget.y), holdDuration);
+    } else {
+      targetDot.style.left = tX+'px';
+      targetDot.style.top = tY+'px';
+      targetDot.classList.add('show');
+      targetAppearedTime = performance.now();
+      startGazeCollection(tX, tY);
+      setTimeout(()=>blinkAndFinishZone(idx, tX, tY), holdDuration);
+    }
+  },2000);
+}
+
+function startGazeCollection(tx, ty){
+  zoneGazeBuffer = [];
+  zoneStartTime = performance.now();
+  latencyRecorded = false;
+
+  gazeListener = function(data, elapsedTime){
+    if(data == null) return;
+    zoneGazeBuffer.push({x:data.x, y:data.y, t:performance.now()-zoneStartTime});
+  };
+  webgazer.setGazeListener(gazeListener);
+}
+
+function blinkAndFinishZone(idx, tx, ty){
+  const targetDot = document.getElementById('targetDot');
+  // Blink 3 times
+  let blinks = 0;
+  const blinkInterval = setInterval(()=>{
+    targetDot.style.opacity = targetDot.style.opacity === '0' ? '1' : '0';
+    blinks++;
+    if(blinks >= 6){
+      clearInterval(blinkInterval);
+      targetDot.classList.remove('show');
+      targetDot.style.opacity = '';
+
+      // Stop gaze collection
+      webgazer.setGazeListener(null);
+
+      // Rest 1s then symptom prompt
+      setTimeout(()=>{
+        const result = analyzeZoneData(idx, tx, ty, zoneGazeBuffer);
+        showSymptomPrompt(idx, result);
+      },1000);
+    }
+  },250);
+}
+
+function analyzeZoneData(idx, tx, ty, gazeData){
+  const zone = ZONES[idx];
+  let latencyMs = 999;
+  let accuracyPx = 999;
+  let correctiveSaccades = 0;
+
+  if(gazeData.length > 0){
+    // Latency: time from target appear to first gaze shift toward target
+    const centerX = w()/2, centerY = h()/2;
+    const initDist = Math.hypot(tx-centerX, ty-centerY);
+    for(let i=0;i<gazeData.length;i++){
+      const d = Math.hypot(gazeData[i].x-tx, gazeData[i].y-ty);
+      if(d < initDist * 0.7){
+        latencyMs = gazeData[i].t;
+        break;
+      }
+    }
+
+    // Accuracy: average distance during latter half (fixation window)
+    const half = Math.floor(gazeData.length/2);
+    if(half > 0){
+      let totalDist = 0;
+      for(let i=half;i<gazeData.length;i++){
+        totalDist += Math.hypot(gazeData[i].x-tx, gazeData[i].y-ty);
+      }
+      accuracyPx = totalDist / (gazeData.length - half);
+    }
+
+    // Corrective saccades: direction reversals
+    let reversals = 0;
+    for(let i=2;i<gazeData.length;i++){
+      const dx1 = gazeData[i-1].x - gazeData[i-2].x;
+      const dx2 = gazeData[i].x - gazeData[i-1].x;
+      const dy1 = gazeData[i-1].y - gazeData[i-2].y;
+      const dy2 = gazeData[i].y - gazeData[i-1].y;
+      // Check for significant direction reversal
+      if((dx1*dx2 < -100 || dy1*dy2 < -100)){
+        reversals++;
+      }
+    }
+    correctiveSaccades = Math.min(reversals, 10);
+  }
+
+  return {
+    zone: zone.name,
+    zoneIndex: idx,
+    targetX: tx,
+    targetY: ty,
+    gazeData: gazeData,
+    latencyMs: Math.round(latencyMs),
+    accuracyPx: Math.round(accuracyPx),
+    correctiveSaccades: correctiveSaccades,
+    difficulty: null,
+    symptoms: null
+  };
+}
+
+/* ========== SYMPTOM PROMPT ========== */
+let pendingResult = null;
+let selectedDifficulty = null;
+let selectedSymptom = null;
+
+function showSymptomPrompt(idx, result){
+  pendingResult = result;
+  selectedDifficulty = null;
+  selectedSymptom = null;
+  document.getElementById('symptomZoneTitle').textContent = 'Zone '+(idx+1)+': '+ZONES[idx].name;
+  document.querySelectorAll('#difficultyGroup .symptom-btn').forEach(b=>b.classList.remove('selected'));
+  document.querySelectorAll('#symptomGroup .symptom-btn').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('symptomNextBtn').disabled = true;
+  document.getElementById('symptomOverlay').classList.add('show');
+}
+
+window.selectDifficulty = function(btn){
+  document.querySelectorAll('#difficultyGroup .symptom-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedDifficulty = btn.dataset.val;
+  checkSymptomReady();
+};
+
+window.selectSymptom = function(btn){
+  document.querySelectorAll('#symptomGroup .symptom-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedSymptom = btn.dataset.val;
+  checkSymptomReady();
+};
+
+function checkSymptomReady(){
+  document.getElementById('symptomNextBtn').disabled = !(selectedDifficulty && selectedSymptom);
+}
+
+window.submitSymptoms = function(){
+  pendingResult.difficulty = selectedDifficulty;
+  pendingResult.symptoms = selectedSymptom;
+  pendingResult.score = scoreZone(pendingResult);
+  assessmentData.push(pendingResult);
+  document.getElementById('symptomOverlay').classList.remove('show');
+  runZone(currentZoneIndex + 1);
+};
+
+/* ========== SCORING ========== */
+function scoreZone(r){
+  let s = 0;
+  // Latency (max 3)
+  if(r.latencyMs < 200) s+=3;
+  else if(r.latencyMs < 300) s+=2;
+  else if(r.latencyMs < 400) s+=1;
+  // Accuracy (max 3)
+  if(r.accuracyPx < 50) s+=3;
+  else if(r.accuracyPx < 100) s+=2;
+  else if(r.accuracyPx < 150) s+=1;
+  // Corrective saccades (max 3)
+  if(r.correctiveSaccades === 0) s+=3;
+  else if(r.correctiveSaccades === 1) s+=2;
+  else if(r.correctiveSaccades === 2) s+=1;
+  // Difficulty (max 2)
+  if(r.difficulty === 'None') s+=2;
+  else if(r.difficulty === 'Mild') s+=1;
+  // Symptom type (max 1)
+  if(r.symptoms === 'None') s+=1;
+  return s;
+}
+
+function gradeFromScore(s, max){
+  const pct = s/max;
+  if(pct >= 0.83) return {label:'Excellent',cls:'grade-excellent'};
+  if(pct >= 0.58) return {label:'Good',cls:'grade-good'};
+  if(pct >= 0.33) return {label:'Fair',cls:'grade-fair'};
+  return {label:'Poor',cls:'grade-poor'};
+}
+
+/* ========== CLINICAL NOTES ========== */
+function generateClinicalNotes(r){
+  const notes = [];
+  if(r.latencyMs > 300) notes.push("Delayed saccade initiation. Consider frontal eye field or basal ganglia involvement.");
+  if(r.accuracyPx > 100) notes.push("Dysmetric saccades noted. May reflect cerebellar modulation deficit.");
+  if(r.correctiveSaccades >= 2) notes.push("Multiple corrective movements. Suggests hypometric saccade pattern.");
+  if(r.symptoms === 'Dizziness') notes.push("Vestibular provocation noted.");
+  if(r.symptoms === 'Double Vision') notes.push("Diplopia reported. Consider cranial nerve or vergence dysfunction.");
+  if(r.zone === 'Antisaccade' && r.accuracyPx > 120) notes.push("Inhibitory control deficit. Prefrontal-SC pathway implicated.");
+  if(r.zone === 'Convergence / Near Point' && r.difficulty !== 'None') notes.push("Near point convergence difficulty. Consider vergence therapy.");
+  return notes;
+}
+
+/* ========== SCREEN 5: REPORT ========== */
+function finishAssessment(){
+  try{webgazer.pause();}catch(e){}
+  showScreen('report');
+  renderReport();
+  saveResult();
+}
+
+function renderReport(savedDate){
+  const now = savedDate ? new Date(savedDate) : new Date();
+  document.getElementById('reportDatetime').textContent = now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+' at '+now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+
+  const totalScore = assessmentData.reduce((a,r)=>a+r.score,0);
+  const maxScore = 120;
+  document.getElementById('overallScore').textContent = totalScore + ' / ' + maxScore;
+  const overallGrade = gradeFromScore(totalScore, maxScore);
+  const gradeEl = document.getElementById('overallGrade');
+  gradeEl.textContent = overallGrade.label;
+  gradeEl.className = 'grade-label ' + overallGrade.cls;
+  document.getElementById('overallScore').style.color =
+    overallGrade.cls.includes('excellent')?'var(--success)':
+    overallGrade.cls.includes('good')?'var(--accent)':
+    overallGrade.cls.includes('fair')?'var(--warn)':'var(--danger)';
+
+  // Zone cards
+  const container = document.getElementById('zoneCards');
+  container.innerHTML = '';
+  assessmentData.forEach(r=>{
+    const g = gradeFromScore(r.score, 12);
+    const notes = generateClinicalNotes(r);
+    const card = document.createElement('div');
+    card.className = 'zone-card';
+    card.innerHTML = `
+      <div class="zone-card-header">
+        <h4>${r.zone}</h4>
+        <span class="badge ${g.cls}">${r.score}/12 ${g.label}</span>
+      </div>
+      <div class="metrics">
+        Latency: <span>${r.latencyMs}ms</span><br>
+        Accuracy: <span>${r.accuracyPx}px</span><br>
+        Corrective saccades: <span>${r.correctiveSaccades}</span><br>
+        Difficulty: <span>${r.difficulty}</span> &middot; Symptoms: <span>${r.symptoms}</span>
+      </div>
+      ${notes.length > 0 ? '<div class="clinical-note">'+notes.join('<br>')+'</div>' : ''}
+    `;
+    container.appendChild(card);
+  });
+
+  // Spider chart
+  drawSpiderChart();
+
+  // Exercise prescription
+  renderPrescription(totalScore);
+}
+
+/* ========== SPIDER CHART ========== */
+function drawSpiderChart(){
+  const canvas = document.getElementById('spiderChart');
+  const ctx = canvas.getContext('2d');
+  const W = 460, H = 460;
+  canvas.width = W; canvas.height = H;
+  const cx = W/2, cy = H/2, R = 180;
+  const n = assessmentData.length;
+  const angleStep = (2*Math.PI)/n;
+
+  ctx.fillStyle = '#060a14';
+  ctx.fillRect(0,0,W,H);
+
+  // Grid rings
+  for(let ring=1;ring<=4;ring++){
+    const r = R * (ring/4);
+    ctx.beginPath();
+    for(let i=0;i<=n;i++){
+      const a = -Math.PI/2 + i*angleStep;
+      const x = cx + r*Math.cos(a);
+      const y = cy + r*Math.sin(a);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(30,45,69,0.6)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Short label map for readability
+  const SHORT_LABELS = {
+    'Horizontal Left':'H-Left','Horizontal Right':'H-Right',
+    'Vertical Up':'V-Up','Vertical Down':'V-Down',
+    'Diagonal Upper-Left':'D-UL','Diagonal Upper-Right':'D-UR',
+    'Diagonal Lower-Left':'D-LL','Diagonal Lower-Right':'D-LR',
+    'Convergence / Near Point':'Converg.','Antisaccade':'Anti-Sacc.'
+  };
+
+  // Spokes + labels
+  for(let i=0;i<n;i++){
+    const a = -Math.PI/2 + i*angleStep;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx+R*Math.cos(a), cy+R*Math.sin(a));
+    ctx.strokeStyle = 'rgba(30,45,69,0.4)';
+    ctx.stroke();
+
+    // Label with angle-aware alignment
+    const lr = R + 30;
+    const lx = cx + lr*Math.cos(a);
+    const ly = cy + lr*Math.sin(a);
+    ctx.fillStyle = '#64748b';
+    ctx.font = '10px "Space Mono"';
+    // Align based on position around the circle
+    const cosA = Math.cos(a);
+    if(cosA > 0.3) ctx.textAlign = 'left';
+    else if(cosA < -0.3) ctx.textAlign = 'right';
+    else ctx.textAlign = 'center';
+    ctx.textBaseline = Math.sin(a) < -0.3 ? 'bottom' : Math.sin(a) > 0.3 ? 'top' : 'middle';
+    const shortName = SHORT_LABELS[assessmentData[i].zone] || assessmentData[i].zone;
+    ctx.fillText(shortName, lx, ly);
+  }
+
+  // Data polygon
+  ctx.beginPath();
+  for(let i=0;i<=n;i++){
+    const idx = i % n;
+    const a = -Math.PI/2 + idx*angleStep;
+    const val = assessmentData[idx].score / 12;
+    const r = R * val;
+    const x = cx + r*Math.cos(a);
+    const y = cy + r*Math.sin(a);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(0,229,255,0.15)';
+  ctx.fill();
+  ctx.strokeStyle = '#00e5ff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Data points
+  for(let i=0;i<n;i++){
+    const a = -Math.PI/2 + i*angleStep;
+    const val = assessmentData[i].score / 12;
+    const r = R * val;
+    const x = cx + r*Math.cos(a);
+    const y = cy + r*Math.sin(a);
+    ctx.beginPath();
+    ctx.arc(x,y,4,0,2*Math.PI);
+    const sc = assessmentData[i].score;
+    ctx.fillStyle = sc<4?'#ef4444':sc<7?'#f59e0b':'#00e5ff';
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+}
+
+/* ========== EXERCISE PRESCRIPTION ========== */
+function renderPrescription(totalScore){
+  const container = document.getElementById('prescription');
+  let tier, tierCls, exercises = [];
+
+  if(totalScore >= 80){
+    tier = 'Tier 1 — Maintenance';
+    tierCls = 'tier-1';
+    exercises = [
+      {name:'Smooth Pursuit Training', desc:'Slowly track a moving object (pen, finger) through all visual fields. 2 min, 2x daily.'},
+      {name:'Near/Far Focus Shifting', desc:'Alternate focus between a near object (6 inches) and a far object (20 feet). 10 cycles, 2x daily.'},
+      {name:'Fixation Stability', desc:'Hold gaze on a stationary target for 30 seconds. Repeat 3 times. Increase to 60 seconds.'},
+    ];
+  } else if(totalScore >= 50){
+    tier = 'Tier 2 — Rehabilitative';
+    tierCls = 'tier-2';
+    exercises = [
+      {name:'Smooth Pursuit Training', desc:'Track a moving target through all fields. 2 min, 2x daily.'},
+      {name:'Near/Far Focus Shifting', desc:'Alternate near (6 in) and far (20 ft) focus. 10 cycles, 2x daily.'},
+      {name:'Fixation Stability', desc:'Hold gaze on a stationary target, 30-60 seconds x3.'},
+    ];
+    // Zone-specific additions
+    const weakZones = assessmentData.filter(r=>r.score<7);
+    weakZones.forEach(r=>{
+      if(r.zone.includes('Horizontal')) exercises.push({name:'Hart Chart (Horizontal)', desc:'Alternate fixation between two Hart Charts placed at eye level. 2 min, 2x daily.'});
+      if(r.zone.includes('Vertical')) exercises.push({name:'Vertical Saccade Metronome', desc:'Use a metronome beat to drive vertical gaze shifts between two targets. Start at 60 BPM. 2 min.'});
+      if(r.zone.includes('Diagonal')) exercises.push({name:'Diagonal Pursuit Drills', desc:'Track a target moving diagonally across visual field. Alternate quadrants. 2 min, 2x daily.'});
+      if(r.zone.includes('Antisaccade')) exercises.push({name:'Antisaccade Drills', desc:'Present visual cue on one side, practice looking to the opposite side. 20 trials, 2x daily.'});
+      if(r.zone.includes('Convergence')) exercises.push({name:'Pencil Push-Ups', desc:'Slowly bring a pencil toward your nose maintaining single vision. 10 reps, 3x daily.'});
+    });
+  } else {
+    tier = 'Tier 3 — Intensive + Professional Referral';
+    tierCls = 'tier-3';
+    exercises = [
+      {name:'Smooth Pursuit Training', desc:'Track a moving target through all fields. 2 min, 3x daily.'},
+      {name:'Near/Far Focus Shifting', desc:'Alternate near (6 in) and far (20 ft) focus. 15 cycles, 3x daily.'},
+      {name:'Fixation Stability', desc:'Hold gaze on a stationary target, build from 15s to 60s.'},
+      {name:'Hart Chart (Horizontal)', desc:'Alternate fixation between two Hart Charts. 2 min, 3x daily.'},
+      {name:'Vertical Saccade Metronome', desc:'Vertical gaze shifts at 60 BPM. 2 min, 2x daily.'},
+      {name:'Diagonal Pursuit Drills', desc:'Diagonal target tracking. 2 min, 2x daily.'},
+      {name:'Antisaccade Drills', desc:'Look opposite to visual cue. 20 trials, 2x daily.'},
+      {name:'Pencil Push-Ups', desc:'Convergence training with pencil. 10 reps, 3x daily.'},
+      {name:'VOR Training (x1 / x2)', desc:'Head rotation while maintaining fixation on a target. Start with x1 (slow), progress to x2 (faster head movement). 1 min each direction.'},
+      {name:'Gaze Stability Drills', desc:'Maintain fixation on a target while body is in gentle motion (standing on foam pad, walking). 2 min.'},
+    ];
+    exercises.push({name:'Professional Referral Recommended', desc:'Score indicates significant oculomotor dysfunction. Consider referral to a functional neurologist, neuro-ophthalmologist, or vestibular therapist for comprehensive evaluation.'});
+  }
+
+  // Deduplicate exercises by name
+  const seen = new Set();
+  exercises = exercises.filter(e=>{if(seen.has(e.name))return false;seen.add(e.name);return true;});
+
+  container.innerHTML = `
+    <h3>Exercise Prescription</h3>
+    <span class="tier-label ${tierCls}">${tier}</span>
+    ${exercises.map(e=>`<div class="rx-item"><span class="rx-name">${e.name}</span> — ${e.desc}</div>`).join('')}
+  `;
+}
+
+/* ========== JSON EXPORT ========== */
+window.exportJSON = function(){
+  const data = buildExportData();
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'neurogaze-assessment-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+};
+
+function buildExportData(){
+  return {
+    tool: 'NeuroGaze Saccadic Assessment',
+    date: new Date().toISOString(),
+    totalScore: assessmentData.reduce((a,r)=>a+r.score,0),
+    maxScore: 120,
+    zones: assessmentData.map(r=>({
+      zone: r.zone,
+      score: r.score,
+      latencyMs: r.latencyMs,
+      accuracyPx: r.accuracyPx,
+      correctiveSaccades: r.correctiveSaccades,
+      difficulty: r.difficulty,
+      symptoms: r.symptoms,
+      clinicalNotes: generateClinicalNotes(r),
+      gazePointCount: r.gazeData.length
+    }))
+  };
+}
+
+/* ========== PERSISTENCE ========== */
+function saveResult(){
+  try{
+    const data = buildExportData();
+    // Save current + append to history (keep last 10)
+    localStorage.setItem('neurogaze_last', JSON.stringify(data));
+    let history = [];
+    try{ history = JSON.parse(localStorage.getItem('neurogaze_history')||'[]'); }catch(e){}
+    history.unshift(data);
+    if(history.length > 10) history = history.slice(0,10);
+    localStorage.setItem('neurogaze_history', JSON.stringify(history));
+  }catch(e){ console.warn('Could not save to localStorage',e); }
+}
+
+window.loadPastResult = function(){
+  try{
+    const data = JSON.parse(localStorage.getItem('neurogaze_last'));
+    if(!data || !data.zones) return;
+    // Reconstruct assessmentData from saved data
+    assessmentData = data.zones.map(z=>({
+      zone: z.zone,
+      score: z.score,
+      latencyMs: z.latencyMs,
+      accuracyPx: z.accuracyPx,
+      correctiveSaccades: z.correctiveSaccades,
+      difficulty: z.difficulty,
+      symptoms: z.symptoms,
+      gazeData: new Array(z.gazePointCount||0) // placeholder
+    }));
+    showScreen('report');
+    renderReport(data.date);
+  }catch(e){ console.warn('Could not load past result',e); }
+};
+
+// On page load, check for past results
+(function checkPastResults(){
+  try{
+    if(localStorage.getItem('neurogaze_last')){
+      document.getElementById('viewPastBtn').style.display = 'inline-block';
+    }
+  }catch(e){}
+})();
+
+})();
+</script>
+</body>
+</html>
