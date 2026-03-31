@@ -372,6 +372,61 @@ border:none!important;
   padding:12px;background:rgba(124,58,237,.06);border-radius:8px;
   border-left:3px solid var(--accent2);
 }
+
+/* ---------- View Toggle ---------- */
+.view-toggle{
+  display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:4px;margin-bottom:8px;
+}
+.view-btn{
+  font-family:var(--font-head);font-weight:600;font-size:.85rem;
+  padding:8px 24px;border:none;border-radius:8px;cursor:pointer;
+  background:transparent;color:var(--muted);transition:all .2s;
+}
+.view-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff}
+.view-btn:hover:not(.active){color:var(--text);background:var(--surface2)}
+.report-view{
+  display:flex;flex-direction:column;align-items:center;gap:20px;width:100%;
+}
+
+/* ---------- User Summary ---------- */
+.user-summary{
+  width:100%;max-width:600px;text-align:center;
+  font-size:.9rem;color:var(--text);line-height:1.6;
+  padding:16px 20px;background:var(--surface);border:1px solid var(--border);border-radius:12px;
+}
+.user-summary .summary-headline{font-size:1.1rem;font-weight:700;margin-bottom:8px}
+.user-summary .weak-list{
+  font-family:var(--font-mono);font-size:.8rem;color:var(--warn);margin-top:8px;
+}
+
+/* ---------- Daily Checklist ---------- */
+.daily-checklist{
+  width:100%;max-width:600px;background:var(--surface);
+  border:1px solid var(--border);border-radius:12px;padding:20px 24px;
+}
+.daily-checklist h3{font-size:1.05rem;margin-bottom:4px;color:var(--accent)}
+.daily-checklist .checklist-sub{font-size:.8rem;color:var(--muted);margin-bottom:14px}
+.check-item{
+  display:flex;align-items:flex-start;gap:10px;padding:10px 0;
+  border-bottom:1px solid var(--border);font-size:.85rem;line-height:1.5;
+}
+.check-item:last-child{border-bottom:none}
+.check-item input[type=checkbox]{
+  flex-shrink:0;width:18px;height:18px;margin-top:2px;cursor:pointer;
+  accent-color:var(--accent);
+}
+.check-item .check-label{color:var(--text)}
+.check-item .check-detail{font-size:.78rem;color:var(--muted);margin-top:2px}
+.check-item.done .check-label{text-decoration:line-through;color:var(--muted)}
+.checklist-progress{
+  font-family:var(--font-mono);font-size:.78rem;color:var(--muted);
+  text-align:center;margin-top:12px;
+}
+.checklist-progress .bar{
+  width:100%;height:6px;background:var(--surface2);border-radius:3px;margin-top:6px;overflow:hidden;
+}
+.checklist-progress .bar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:3px;transition:width .3s}
 </style>
 </head>
 <body>
@@ -472,21 +527,45 @@ border:none!important;
     <h1>NeuroGaze Assessment Report</h1>
     <div class="datetime mono" id="reportDatetime"></div>
   </div>
-  <div class="overall-badge" id="overallBadge">
-    <div class="score-big" id="overallScore"></div>
-    <div class="grade-label" id="overallGrade"></div>
+  <!-- View Mode Toggle -->
+  <div class="view-toggle">
+    <button class="view-btn active" id="viewUserBtn" onclick="setReportView('user')">My Plan</button>
+    <button class="view-btn" id="viewDrBtn" onclick="setReportView('dr')">Practitioner View</button>
   </div>
-  <div class="chart-container">
-    <h3>Zone Performance Map</h3>
-    <canvas id="spiderChart" width="460" height="460"></canvas>
+
+  <!-- ===== USER VIEW ===== -->
+  <div class="report-view" id="reportUserView">
+    <div class="overall-badge" id="overallBadgeUser">
+      <div class="score-big" id="overallScoreUser"></div>
+      <div class="grade-label" id="overallGradeUser"></div>
+    </div>
+    <div class="user-summary" id="userSummary"></div>
+    <div class="daily-checklist" id="dailyChecklist"></div>
+    <div class="cross-lateral" id="crossLateralUser"></div>
+    <div class="report-actions">
+      <button class="btn btn-sm" onclick="window.print()">Print My Plan</button>
+    </div>
   </div>
-  <div class="zone-cards" id="zoneCards"></div>
-  <div class="prescription" id="prescription"></div>
-  <div class="cross-lateral" id="crossLateral"></div>
-  <div class="report-actions">
-    <button class="btn btn-sm" onclick="window.print()">Print / Save as PDF</button>
-    <button class="json-export" onclick="exportJSON()">Export JSON for Practitioner</button>
+
+  <!-- ===== PRACTITIONER VIEW ===== -->
+  <div class="report-view" id="reportDrView" style="display:none">
+    <div class="overall-badge" id="overallBadge">
+      <div class="score-big" id="overallScore"></div>
+      <div class="grade-label" id="overallGrade"></div>
+    </div>
+    <div class="chart-container">
+      <h3>Zone Performance Map</h3>
+      <canvas id="spiderChart" width="460" height="460"></canvas>
+    </div>
+    <div class="zone-cards" id="zoneCards"></div>
+    <div class="prescription" id="prescription"></div>
+    <div class="cross-lateral" id="crossLateral"></div>
+    <div class="report-actions">
+      <button class="btn btn-sm" onclick="window.print()">Print / Save as PDF</button>
+      <button class="json-export" onclick="exportJSON()">Export JSON for Practitioner</button>
+    </div>
   </div>
+
   <div class="report-footer">
     Reassess in 4 weeks to track progress.<br>
     This is a screening tool, not a medical diagnosis. Consult a licensed practitioner for clinical interpretation.<br>
@@ -1227,7 +1306,164 @@ function renderReport(savedDate){
 
   // Exercise prescription
   renderPrescription(totalScore);
+
+  // User view
+  renderUserView(totalScore, maxScore, overallGrade);
+
+  // Default to user view
+  setReportView('user');
 }
+
+/* ========== VIEW TOGGLE ========== */
+window.setReportView = function(mode){
+  const userView = document.getElementById('reportUserView');
+  const drView = document.getElementById('reportDrView');
+  const userBtn = document.getElementById('viewUserBtn');
+  const drBtn = document.getElementById('viewDrBtn');
+  if(mode==='user'){
+    userView.style.display='flex'; drView.style.display='none';
+    userBtn.classList.add('active'); drBtn.classList.remove('active');
+  } else {
+    userView.style.display='none'; drView.style.display='flex';
+    userBtn.classList.remove('active'); drBtn.classList.add('active');
+    // Redraw spider chart when switching to dr view (canvas may not render while hidden)
+    setTimeout(()=>drawSpiderChart(),50);
+  }
+};
+
+/* ========== USER VIEW ========== */
+function renderUserView(totalScore, maxScore, overallGrade){
+  // Overall badge (user)
+  document.getElementById('overallScoreUser').textContent = totalScore + ' / ' + maxScore;
+  const gradeElU = document.getElementById('overallGradeUser');
+  gradeElU.textContent = overallGrade.label;
+  gradeElU.className = 'grade-label ' + overallGrade.cls;
+  document.getElementById('overallScoreUser').style.color =
+    overallGrade.cls.includes('excellent')?'var(--success)':
+    overallGrade.cls.includes('good')?'var(--accent)':
+    overallGrade.cls.includes('fair')?'var(--warn)':'var(--danger)';
+
+  // Summary
+  const weakZones = assessmentData.filter(r=>r.score<7);
+  const symptomatic = assessmentData.filter(r=>r.symptoms && r.symptoms!=='None');
+  let headline, detail;
+  if(totalScore >= 100){
+    headline = 'Your eye movement control looks strong!';
+    detail = 'Maintain your performance with the daily exercises below.';
+  } else if(totalScore >= 70){
+    headline = 'Good overall, with some areas to improve.';
+    detail = 'Focus on the exercises below to strengthen your weaker zones.';
+  } else if(totalScore >= 40){
+    headline = 'Several areas need attention.';
+    detail = 'Follow the daily plan consistently for 4 weeks, then reassess.';
+  } else {
+    headline = 'Significant difficulties detected.';
+    detail = 'Follow the intensive plan below and consider seeing a specialist.';
+  }
+  let weakHtml = '';
+  if(weakZones.length > 0){
+    weakHtml = '<div class="weak-list">Areas to focus on: '+weakZones.map(r=>r.zone).join(', ')+'</div>';
+  }
+  document.getElementById('userSummary').innerHTML = `
+    <div class="summary-headline">${headline}</div>
+    ${detail}
+    ${weakHtml}
+    ${symptomatic.length > 0 ? '<div class="weak-list" style="color:var(--danger)">Symptoms reported in '+symptomatic.length+' zone(s) — mention these to your provider.</div>' : ''}
+  `;
+
+  // Daily checklist
+  renderDailyChecklist(totalScore);
+
+  // Cross-lateral for user view too
+  renderCrossLateralInto('crossLateralUser', totalScore);
+}
+
+function renderDailyChecklist(totalScore){
+  const container = document.getElementById('dailyChecklist');
+  const items = [];
+
+  // Core exercises everyone gets
+  items.push({id:'cl_warmup', label:'Cross-Lateral Warm-Up', detail:'Stand and do the arrow drills below for 2 minutes to activate both brain hemispheres.'});
+  items.push({id:'cl_pursuit', label:'Smooth Pursuit Training', detail:'Slowly track a finger or pen through all directions. 2 minutes.'});
+  items.push({id:'cl_nearfar', label:'Near/Far Focus Shifts', detail:'Alternate focus between a near object (6 in) and a far object (20 ft). 10 cycles.'});
+  items.push({id:'cl_fixation', label:'Fixation Hold', detail:'Stare at a stationary target without moving your eyes. Hold 30-60 seconds, repeat 3x.'});
+
+  // Zone-specific items
+  const weakZones = assessmentData.filter(r=>r.score<7);
+  const added = new Set();
+  weakZones.forEach(r=>{
+    if(r.zone.includes('Horizontal') && !added.has('hz')){
+      added.add('hz');
+      items.push({id:'cl_hz', label:'Horizontal Saccade Drills', detail:'Rapidly shift gaze between two targets at eye level, 2 min.'});
+    }
+    if(r.zone.includes('Vertical') && !added.has('vt')){
+      added.add('vt');
+      items.push({id:'cl_vt', label:'Vertical Saccade Drills', detail:'Shift gaze up and down between two targets, 2 min.'});
+    }
+    if(r.zone.includes('Diagonal') && !added.has('dg')){
+      added.add('dg');
+      items.push({id:'cl_dg', label:'Diagonal Tracking', detail:'Follow a target moving diagonally across your field of view, 2 min.'});
+    }
+    if(r.zone.includes('Convergence') && !added.has('cv')){
+      added.add('cv');
+      items.push({id:'cl_cv', label:'Pencil Push-Ups', detail:'Slowly bring a pencil toward your nose keeping it in focus. 10 reps.'});
+    }
+    if(r.zone.includes('Antisaccade') && !added.has('as')){
+      added.add('as');
+      items.push({id:'cl_as', label:'Antisaccade Practice', detail:'A cue appears on one side — look to the opposite side. 20 trials.'});
+    }
+  });
+
+  items.push({id:'cl_cooldown', label:'Cool-Down: Palming', detail:'Close eyes, cup palms over them, breathe deeply for 1 minute.'});
+
+  // Load saved checklist state
+  let checked = {};
+  try{ checked = JSON.parse(localStorage.getItem('neurogaze_checklist_'+new Date().toISOString().slice(0,10))||'{}'); }catch(e){}
+
+  const freq = totalScore < 50 ? '3x daily' : '2x daily';
+
+  container.innerHTML = `
+    <h3>Your Daily Exercise Plan</h3>
+    <div class="checklist-sub">Complete these exercises ${freq}. Check off as you go — progress resets each day.</div>
+    ${items.map(item=>{
+      const isDone = checked[item.id];
+      return `
+        <div class="check-item ${isDone?'done':''}" id="ci_${item.id}">
+          <input type="checkbox" ${isDone?'checked':''} onchange="toggleCheck('${item.id}',this)">
+          <div>
+            <div class="check-label">${item.label}</div>
+            <div class="check-detail">${item.detail}</div>
+          </div>
+        </div>
+      `;
+    }).join('')}
+    <div class="checklist-progress">
+      <span id="checkCount">${Object.values(checked).filter(Boolean).length}</span> / ${items.length} completed today
+      <div class="bar"><div class="bar-fill" id="checkBar" style="width:${Math.round(Object.values(checked).filter(Boolean).length/items.length*100)}%"></div></div>
+    </div>
+  `;
+
+  // Store item count for progress tracking
+  window._checklistTotal = items.length;
+}
+
+window.toggleCheck = function(id, el){
+  const today = new Date().toISOString().slice(0,10);
+  let checked = {};
+  try{ checked = JSON.parse(localStorage.getItem('neurogaze_checklist_'+today)||'{}'); }catch(e){}
+  checked[id] = el.checked;
+  try{ localStorage.setItem('neurogaze_checklist_'+today, JSON.stringify(checked)); }catch(e){}
+
+  // Update UI
+  const ci = document.getElementById('ci_'+id);
+  if(ci){
+    if(el.checked) ci.classList.add('done'); else ci.classList.remove('done');
+  }
+  const count = Object.values(checked).filter(Boolean).length;
+  const total = window._checklistTotal || 1;
+  document.getElementById('checkCount').textContent = count;
+  document.getElementById('checkBar').style.width = Math.round(count/total*100)+'%';
+};
 
 /* ========== SPIDER CHART ========== */
 function drawSpiderChart(){
@@ -1392,7 +1628,10 @@ function renderPrescription(totalScore){
 
 /* ========== CROSS-LATERAL BRAIN RESET EXERCISES ========== */
 function renderCrossLateral(totalScore){
-  const container = document.getElementById('crossLateral');
+  renderCrossLateralInto('crossLateral', totalScore);
+}
+function renderCrossLateralInto(containerId, totalScore){
+  const container = document.getElementById(containerId);
 
   // Build exercise sequence based on weak zones
   const weakLeft = assessmentData.some(r=>r.score<7 && (r.zone.includes('Left')));
