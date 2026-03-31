@@ -45,6 +45,16 @@ box-shadow:none;
 
 /* ---------- Screen 1: Intro ---------- */
 #intro{text-align:center;gap:24px;padding:40px}
+@media(max-width:767px){
+  #intro{gap:12px;padding:20px 16px;justify-content:flex-start;padding-top:30px}
+  #intro h1{font-size:2rem}
+  #intro .subtitle{font-size:.9rem}
+  .logo-ring{width:70px;height:70px}
+  .logo-eye{width:28px;height:28px}
+  .how-steps{gap:6px}
+  .how-step{font-size:.78rem;gap:8px}
+  .how-step .step-num{width:22px;height:22px;font-size:.65rem}
+}
 .logo-ring{
 width:100px;height:100px;border-radius:50%;
 border:3px solid var(--accent);
@@ -315,6 +325,28 @@ border:none!important;
   #webgazerGazeDot{display:none!important}
 }
 
+/* ---------- Camera Status Indicator ---------- */
+.cam-indicator{
+  position:fixed;top:10px;right:10px;z-index:900;
+  display:flex;align-items:center;gap:6px;
+  background:var(--surface);border:1px solid var(--border);border-radius:20px;
+  padding:6px 14px;cursor:pointer;
+  font-family:var(--font-mono);font-size:.7rem;color:var(--muted);
+  transition:all .2s;
+}
+.cam-indicator:hover{border-color:var(--accent);color:var(--accent)}
+.cam-indicator-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--success);
+  box-shadow:0 0 6px var(--success);
+}
+.cam-preview-popup{
+  position:fixed;top:44px;right:10px;z-index:901;
+  width:160px;height:120px;border-radius:10px;overflow:hidden;
+  border:2px solid var(--accent);background:#000;
+  display:none;
+}
+.cam-preview-popup.show{display:block}
+
 /* ---------- How-It-Works Steps ---------- */
 .how-steps{
   display:flex;flex-direction:column;gap:10px;
@@ -431,11 +463,15 @@ border:none!important;
 </head>
 <body>
 
-<!-- ============ CAMERA HEADER STRIP ============ -->
-<div class="camera-header" id="cameraHeader">
-  <div class="cam-status-dot" id="camDot"></div>
-  <span class="cam-label" id="camLabel">Camera</span>
+<!-- ============ CAMERA HEADER STRIP (hidden, kept for legacy) ============ -->
+<div class="camera-header" id="cameraHeader" style="display:none"></div>
+
+<!-- ============ CAMERA STATUS INDICATOR ============ -->
+<div class="cam-indicator" id="camIndicator" style="display:none" onclick="toggleCamPreview()">
+  <div class="cam-indicator-dot"></div>
+  <span>Camera Active</span>
 </div>
+<div class="cam-preview-popup" id="camPreviewPopup"></div>
 
 <!-- ============ SCREEN 1: INTRO ============ -->
 <div id="intro" class="screen active">
@@ -610,10 +646,10 @@ let faceReady = false;
 const ZONES = [
   {name:"Horizontal Left",       getPos:()=>({x:w()*0.08, y:h()*0.5})},
   {name:"Horizontal Right",      getPos:()=>({x:w()*0.92, y:h()*0.5})},
-  {name:"Vertical Up",           getPos:()=>({x:w()*0.5,  y:h()*0.08})},
+  {name:"Vertical Up",           getPos:()=>({x:w()*0.5,  y:h()*0.12})},
   {name:"Vertical Down",         getPos:()=>({x:w()*0.5,  y:h()*0.92})},
-  {name:"Diagonal Upper-Left",   getPos:()=>({x:w()*0.1,  y:h()*0.1})},
-  {name:"Diagonal Upper-Right",  getPos:()=>({x:w()*0.9,  y:h()*0.1})},
+  {name:"Diagonal Upper-Left",   getPos:()=>({x:w()*0.1,  y:h()*0.12})},
+  {name:"Diagonal Upper-Right",  getPos:()=>({x:w()*0.9,  y:h()*0.12})},
   {name:"Diagonal Lower-Left",   getPos:()=>({x:w()*0.1,  y:h()*0.9})},
   {name:"Diagonal Lower-Right",  getPos:()=>({x:w()*0.9,  y:h()*0.9})},
   {name:"Convergence / Near Point", getPos:()=>({x:w()*0.5, y:h()*0.5}), convergence:true},
@@ -632,25 +668,24 @@ window.showScreen = function(id){
 
   const header = document.getElementById('cameraHeader');
   const vc = document.getElementById('webgazerVideoContainer');
+  const camIndicator = document.getElementById('camIndicator');
+
+  // Always hide the header — we use a small floating indicator instead
+  header.classList.remove('show');
+  document.body.classList.remove('cam-active');
 
   if(id==='camera-setup'){
     // Camera preview goes in the camera-box on setup screen
-    header.classList.remove('show');
-    document.body.classList.remove('cam-active');
+    if(camIndicator) camIndicator.style.display='none';
   } else if(id==='calibration' || id==='assessment'){
-    // Move video into header strip
-    if(vc){
-      header.appendChild(vc);
-      header.classList.add('show');
-      document.body.classList.add('cam-active');
-      document.getElementById('camDot').classList.add('active');
-      document.getElementById('camLabel').textContent = 'Tracking';
-    }
+    // Hide webgazer video entirely — no header, no PIP
+    if(vc) vc.style.display='none';
+    // Show small camera status indicator
+    if(camIndicator) camIndicator.style.display='flex';
   } else {
-    // Intro / report — hide header
-    header.classList.remove('show');
-    document.body.classList.remove('cam-active');
-    if(id==='report' && vc) vc.style.display='none';
+    // Intro / report
+    if(vc) vc.style.display='none';
+    if(camIndicator) camIndicator.style.display='none';
   }
 };
 
@@ -702,6 +737,29 @@ function initCamera(){
   updateCameraStatus('detecting','Requesting camera access...');
   startWebGazer(false);
 }
+
+window.toggleCamPreview = function(){
+  const popup = document.getElementById('camPreviewPopup');
+  const vc = document.getElementById('webgazerVideoContainer');
+  if(popup.classList.contains('show')){
+    popup.classList.remove('show');
+    if(vc) vc.style.display='none';
+  } else {
+    if(vc){
+      popup.appendChild(vc);
+      vc.style.display='block';
+      vc.style.position='relative';
+      vc.style.width='160px';
+      vc.style.height='120px';
+    }
+    popup.classList.add('show');
+    // Auto-hide after 3 seconds
+    setTimeout(()=>{
+      popup.classList.remove('show');
+      if(vc) vc.style.display='none';
+    },3000);
+  }
+};
 
 window.retryCamera = function(){
   cameraInitialized = false;
