@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuroGaze 20-Point Strategic Plan</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg: #060a14;
+  --surface: #0d1424;
+  --surface-hover: #131d33;
+  --border: rgba(0, 229, 255, 0.12);
+  --cyan: #00e5ff;
+  --violet: #7c3aed;
+  --amber: #f59e0b;
+  --green: #10b981;
+  --red: #ef4444;
+  --text: #e2e8f0;
+  --text-muted: #94a3b8;
+  --font-head: 'Syne', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px 20px;
+  position: relative;
+  z-index: 1;
+}
+
+/* HEADER */
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.header h1 {
+  font-family: var(--font-head);
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--cyan), var(--violet));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 8px;
+}
+
+.header .subtitle {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+/* STATS BAR */
+.stats-bar {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.stat-item {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.stat-item span {
+  font-weight: 700;
+  color: var(--cyan);
+}
+
+/* CONTROLS */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 28px;
+  align-items: center;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.control-group label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--text-muted);
+}
+
+.btn {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn:hover { border-color: var(--cyan); color: var(--text); }
+.btn.active { background: rgba(0,229,255,0.1); border-color: var(--cyan); color: var(--cyan); }
+
+/* CARD GRID */
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+/* CARD */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.card:hover {
+  border-color: var(--cyan);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,229,255,0.08);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.card-number {
+  font-family: var(--font-head);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.card-title {
+  font-family: var(--font-head);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+  line-height: 1.3;
+}
+
+.card-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.badge {
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-children { background: rgba(124,58,237,0.2); color: #a78bfa; border: 1px solid rgba(124,58,237,0.3); }
+.badge-athletes { background: rgba(0,229,255,0.1); color: var(--cyan); border: 1px solid rgba(0,229,255,0.2); }
+.badge-adjacent { background: rgba(245,158,11,0.15); color: var(--amber); border: 1px solid rgba(245,158,11,0.25); }
+.badge-dr { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.25); }
+.badge-sales { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.25); }
+
+.benefit-score {
+  font-family: var(--font-head);
+  font-size: 2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.benefit-score.high { color: var(--green); }
+.benefit-score.mid { color: var(--amber); }
+.benefit-score.low { color: var(--red); }
+
+.benefit-label {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* METRIC BARS */
+.metrics {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.metric {
+  flex: 1;
+}
+
+.metric-label {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.metric-bar {
+  height: 4px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.metric-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.metric-fill.rev { background: var(--cyan); }
+.metric-fill.eff { background: var(--violet); }
+.metric-fill.spd { background: var(--green); }
+
+/* EXPANDED CARD / MODAL */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(6,10,20,0.92);
+  z-index: 1000;
+  overflow-y: auto;
+  padding: 40px 20px;
+  backdrop-filter: blur(4px);
+}
+
+.modal-overlay.active { display: flex; justify-content: center; align-items: flex-start; }
+
+.modal-content {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  max-width: 720px;
+  width: 100%;
+  padding: 36px;
+  position: relative;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.modal-close:hover { color: var(--cyan); }
+
+.modal-title {
+  font-family: var(--font-head);
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.modal-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.modal-scores {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 16px;
+  background: rgba(0,229,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.modal-score-item {
+  text-align: center;
+}
+
+.modal-score-item .val {
+  font-family: var(--font-head);
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.modal-score-item .lbl {
+  font-size: 0.6rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.plan-section {
+  margin-bottom: 20px;
+}
+
+.plan-section h3 {
+  font-family: var(--font-head);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--cyan);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.plan-section p {
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+/* RESPONSIVE */
+@media (max-width: 640px) {
+  .card-grid { grid-template-columns: 1fr; }
+  .controls { flex-direction: column; align-items: stretch; }
+  .control-group { flex-wrap: wrap; }
+  .stats-bar { flex-direction: column; gap: 8px; text-align: center; }
+  .modal-content { padding: 24px 18px; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>NeuroGaze 20-Point Strategic Plan</h1>
+    <p class="subtitle">Interactive Opportunity Dashboard — Sorted by Benefit Score</p>
+  </div>
+
+  <div class="stats-bar" id="statsBar"></div>
+
+  <div class="controls">
+    <div class="control-group">
+      <label>Sort:</label>
+      <button class="btn active" data-sort="benefit">Benefit Score</button>
+      <button class="btn" data-sort="revenue">Revenue</button>
+      <button class="btn" data-sort="effort">Effort (Low→High)</button>
+      <button class="btn" data-sort="speed">Speed</button>
+    </div>
+    <div class="control-group">
+      <label>Filter:</label>
+      <button class="btn active" data-filter="all">All</button>
+      <button class="btn" data-filter="children">Children</button>
+      <button class="btn" data-filter="athletes">Athletes</button>
+      <button class="btn" data-filter="adjacent">Adjacent</button>
+      <button class="btn" data-filter="sales">Sales Only</button>
+      <button class="btn" data-filter="nodr">No Dr. Needed</button>
+    </div>
+  </div>
+
+  <div class="card-grid" id="cardGrid"></div>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal-content" id="modalContent"></div>
+</div>
+
+<script>
+const ideas = [
+  {
+    id: 1, title: "School Readiness Screening", subtitle: "NeuroGaze Jr. for K-1st grade, 5-zone simplified protocol",
+    category: "children", rev: 8, effort: 7, speed: 4, dr: true, sales: false, benefit: 3.14,
+    plan: {
+      opportunity: "Every kindergarten and 1st-grade class has 3-5 kids who aren't school-ready but don't get flagged until they're already behind. A 5-zone simplified NeuroGaze protocol can screen entire classrooms in under an hour, giving schools objective data before problems compound.",
+      science: "Saccadic control develops predictably in children ages 4-7. Deficits in smooth pursuit and fixation stability at this age correlate strongly with fine-motor readiness and reading acquisition.",
+      angle: "Build NeuroGaze Jr. — a tablet-friendly 5-zone assessment with age-normed scoring, cartoon-themed UI, and classroom batch reporting. Sell to districts as a school-readiness supplement.",
+      limitation: "Requires pediatric norms validation study. Parents may push back on 'testing' young children. Need parental consent workflows.",
+      action: "1) Design simplified 5-zone protocol for ages 4-7. 2) Partner with 2-3 schools for pilot data. 3) Build age-normed percentile engine. 4) Create parent-friendly report template.",
+      revenue: "$15-25/student screening fee or $3,000-5,000/yr district license. Districts pay from Title I or early intervention budgets.",
+      timeline: "12-18 months to validated product. Need 6 months for norms study.",
+      effortDesc: "High — new protocol design, age norms, UI for young children, consent management.",
+      dependencies: "Pediatric validation study, IRB approval for child data, tablet-compatible assessment UI."
+    }
+  },
+  {
+    id: 2, title: "Dyslexia/Reading Early Detection", subtitle: "Flag for referral, not diagnosis — DEM test comparable",
+    category: "children", rev: 8, effort: 5, speed: 5, dr: true, sales: false, benefit: 4.70,
+    plan: {
+      opportunity: "Dyslexia affects ~15% of students but average identification age is 3rd grade — years after intervention would be most effective. A saccadic screening that flags at-risk kids for referral (not diagnosis) fills a massive gap.",
+      science: "The Developmental Eye Movement (DEM) test shows that children with reading difficulties demonstrate distinct saccadic patterns — more regressions, shorter fixations, and poor left-to-right tracking. NeuroGaze zones map directly to these metrics.",
+      angle: "Position as a 'reading readiness flag' that triggers referral to specialists. Not a diagnosis tool — a screening funnel. Compare results to DEM-equivalent norms.",
+      limitation: "Must be crystal clear this is screening, not diagnosis. Regulatory risk if marketed as diagnostic. Need speech-language pathologist or reading specialist buy-in.",
+      action: "1) Map NeuroGaze zones to DEM-equivalent metrics. 2) Create 'reading readiness flag' algorithm. 3) Build referral workflow template. 4) Partner with reading intervention companies.",
+      revenue: "$10-20/screening or bundled into school district license. Referral partnerships could add revenue share.",
+      timeline: "8-12 months. Need comparison study against DEM test.",
+      effortDesc: "Moderate — algorithm development, comparison validation, referral workflow.",
+      dependencies: "DEM comparison study, reading specialist advisory board, clear regulatory positioning."
+    }
+  },
+  {
+    id: 3, title: "Physical-to-Academic Pipeline", subtitle: "Cross-lateral drills connecting visual assessment to movement",
+    category: "children", rev: 6, effort: 4, speed: 6, dr: false, sales: false, benefit: 5.25,
+    plan: {
+      opportunity: "Schools desperately want interventions, not just assessments. Connecting NeuroGaze results to specific cross-lateral movement drills creates a complete assess→intervene→reassess loop that PE teachers and occupational therapists can run.",
+      science: "Cross-lateral movements (crossing midline) activate corpus callosum pathways shared with oculomotor control. Zone-specific deficits map to specific movement pattern weaknesses.",
+      angle: "Create a 'prescription' output: NeuroGaze identifies zone weaknesses → system generates a 4-week movement drill program targeting those specific visual-motor pathways. Sell as the intervention layer.",
+      limitation: "Evidence for specific drill→zone improvement is thin. Could oversell causation. Need pre/post data to prove the loop works.",
+      action: "1) Map zone deficits to cross-lateral drill library. 2) Build auto-prescription engine. 3) Create PE teacher implementation guide. 4) Run 8-week pilot measuring pre/post improvement.",
+      revenue: "$2,000-4,000/school annual subscription for the intervention module. Add-on to screening tier.",
+      timeline: "4-6 months for drill library + prescription engine. Pilot adds 2-3 months.",
+      effortDesc: "Moderate — drill library curation, prescription algorithm, teacher training materials.",
+      dependencies: "Existing screening product, PE/OT teacher partnerships for drill validation, pre/post measurement protocol."
+    }
+  },
+  {
+    id: 4, title: "ADHD/Attention Screening", subtitle: "Antisaccade zone measures inhibitory control/prefrontal function",
+    category: "children", rev: 7, effort: 5, speed: 5, dr: true, sales: false, benefit: 4.30,
+    plan: {
+      opportunity: "ADHD assessment waitlists are 6-12 months in most areas. An objective antisaccade-based screening that quantifies inhibitory control could be a fast, affordable first filter before expensive neuropsych evaluations.",
+      science: "Antisaccade tasks (looking away from a stimulus) directly measure prefrontal inhibitory control — the same deficit core to ADHD. Error rates and correction times on antisaccade trials correlate with ADHD severity.",
+      angle: "Add an antisaccade challenge zone to NeuroGaze. Market as 'attention screening' — not ADHD diagnosis. Provide quantified inhibitory control scores that parents can bring to their pediatrician.",
+      limitation: "Cannot diagnose ADHD — it's a behavioral diagnosis requiring clinical interview. Risk of parent over-interpretation. Need very clear positioning as screening only.",
+      action: "1) Build antisaccade challenge protocol. 2) Establish age-normed inhibitory control scores. 3) Create parent report with clear 'screening only' language. 4) Partner with ADHD clinics as referral source.",
+      revenue: "$25-40/screening direct-to-parent or $5,000/yr to pediatric practices. Referral fee from ADHD clinics.",
+      timeline: "8-12 months. Antisaccade protocol design + age norming takes time.",
+      effortDesc: "Moderate-high — new protocol, age norms, careful marketing/legal positioning.",
+      dependencies: "Antisaccade protocol validation, pediatric norms, legal review of marketing claims."
+    }
+  },
+  {
+    id: 5, title: "School Nurse Vision Day Integration", subtitle: "10-min add-on to existing acuity screening, $1,200-2,000/yr per district",
+    category: "children", rev: 8, effort: 4, speed: 5, dr: false, sales: true, benefit: 5.88,
+    plan: {
+      opportunity: "Every school district already runs annual vision screening days (acuity checks). Adding a 10-minute NeuroGaze oculomotor assessment onto existing infrastructure means zero new logistics — just an add-on to what's already happening.",
+      science: "Standard acuity screening misses oculomotor dysfunction in 20-30% of students who pass the eye chart. Functional vision problems (tracking, convergence, saccadic control) require a different assessment entirely.",
+      angle: "Sell NeuroGaze as a '10-minute add-on' to existing vision screening days. School nurses already have the time blocked, kids are already lined up. Position as 'the functional vision screen that the eye chart misses.'",
+      limitation: "School nurses may lack confidence to interpret results. District procurement cycles are slow (6-12 months). Need to fit into existing workflows perfectly.",
+      action: "1) Create school nurse training module (2-hour certification). 2) Build auto-interpretation reports (no nurse judgment needed). 3) Develop district pricing model. 4) Pilot in 3-5 districts.",
+      revenue: "$1,200-2,000/yr per district for unlimited screenings. Or $3-5/student. Districts pay from health services budget.",
+      timeline: "4-6 months to market. Sales-driven — product mostly exists.",
+      effortDesc: "Low-moderate — workflow integration, training materials, simplified reporting.",
+      dependencies: "Simplified report that doesn't require clinical interpretation, district sales relationships, nurse training program."
+    }
+  },
+  {
+    id: 6, title: "IEP Special Education Documentation", subtitle: "JSON export + spider chart as IEP supporting docs",
+    category: "children", rev: 7, effort: 5, speed: 4, dr: true, sales: false, benefit: 4.00,
+    plan: {
+      opportunity: "Special education teams spend hours compiling documentation for IEP meetings. A standardized NeuroGaze report with spider charts and JSON-exportable data gives them objective visual-motor evidence in a format IEP teams actually use.",
+      science: "IEP eligibility for 'Other Health Impairment' or 'Specific Learning Disability' requires documented evidence of processing deficits. Oculomotor data provides objective, quantifiable support.",
+      angle: "Build an IEP-formatted export: spider chart visualization, percentile rankings, zone-by-zone narrative, and machine-readable JSON for integration with IEP management software (SEIS, Frontline, etc.).",
+      limitation: "IEP teams may not accept NeuroGaze data without established validity. Need buy-in from school psychologists. Different states have different IEP documentation requirements.",
+      action: "1) Research IEP documentation standards by state. 2) Build spider chart + narrative report generator. 3) Create JSON export matching SEIS/Frontline schemas. 4) Get school psychologist endorsements.",
+      revenue: "$500-1,000/school annual for IEP module. Or per-report pricing at $25-50.",
+      timeline: "6-10 months. Need state-specific compliance research.",
+      effortDesc: "Moderate — report design, JSON schema mapping, state compliance research.",
+      dependencies: "Validated assessment data, school psychologist advisory board, IEP software integration partnerships."
+    }
+  },
+  {
+    id: 7, title: "Zone Asymmetry as Injury Risk", subtitle: "L/R differential predicts compensation patterns",
+    category: "athletes", rev: 7, effort: 2, speed: 9, dr: false, sales: false, benefit: 12.25,
+    plan: {
+      opportunity: "Every athlete has left/right asymmetries in their visual-motor system, but nobody is measuring them. A >15% zone asymmetry index flags compensation patterns that precede non-contact injuries — exactly what S&C coaches and athletic trainers are desperate for.",
+      science: "Oculomotor asymmetry reflects hemispheric processing imbalances. Research shows athletes with visual-motor asymmetries compensate physically, leading to altered movement patterns and increased ACL/ankle injury risk.",
+      angle: "Add a simple L/R asymmetry calculation to existing NeuroGaze output. Generate an 'Asymmetry Alert' when differential exceeds threshold. Market to athletic trainers as an injury risk pre-screen.",
+      limitation: "Correlation isn't causation — asymmetry doesn't guarantee injury. Need longitudinal data to validate predictive claims. Start with 'risk flag' language, not 'prediction.'",
+      action: "1) Calculate L/R zone differentials from existing data. 2) Set threshold alerts (>15% = yellow, >25% = red). 3) Create athletic trainer one-page report. 4) Reach out to 5 university athletic programs.",
+      revenue: "$200-500/athlete annual monitoring or $5,000-15,000/team. Athletic departments have budget.",
+      timeline: "2-4 weeks. This is mostly a reporting/calculation layer on existing data.",
+      effortDesc: "Very low — math + report template on existing infrastructure.",
+      dependencies: "Existing NeuroGaze zone data, threshold validation with retrospective data."
+    }
+  },
+  {
+    id: 8, title: "Keyboard Response Validation", subtitle: "Transforms webcam tool into true reaction time system",
+    category: "athletes", rev: 9, effort: 5, speed: 7, dr: false, sales: false, benefit: 5.70,
+    plan: {
+      opportunity: "Current NeuroGaze uses webcam gaze tracking for direction — but adding keyboard response timing transforms it into a validated reaction time measurement system. This is the highest-priority tech upgrade because it unlocks multiple downstream products.",
+      science: "Simple reaction time (SRT) and choice reaction time (CRT) measured via keyboard response have decades of validation in sports science. Combining gaze direction with keystroke timing creates a dual-measure system no competitor offers.",
+      angle: "Build a keyboard response module: stimulus appears → athlete presses designated key → system captures both WHERE they looked (gaze) and HOW FAST they responded (keystroke latency). This dual metric is unique.",
+      limitation: "Keyboard latency varies by hardware (1-15ms). Need calibration routine. Won't match lab-grade equipment but can match clinical-grade if implemented well.",
+      action: "1) Build keyboard event capture with high-resolution timing API. 2) Create hardware latency calibration routine. 3) Validate against lab reaction time equipment. 4) Integrate into existing assessment flow.",
+      revenue: "Enables premium tier pricing ($49-99/mo vs current $19-29). Also unlocks esports market entirely.",
+      timeline: "6-10 weeks for core build. Validation study adds 4-6 weeks.",
+      effortDesc: "Moderate — timing precision engineering, calibration logic, validation study.",
+      dependencies: "Performance.now() browser API, keyboard event handling, reference device for validation."
+    }
+  },
+  {
+    id: 9, title: "Sport-Specific Zone Profiles", subtitle: "Baseball, basketball, combat, soccer, golf, tennis, esports mapping",
+    category: "athletes", rev: 8, effort: 4, speed: 6, dr: false, sales: false, benefit: 6.25,
+    plan: {
+      opportunity: "A baseball player needs different visual skills than a goalkeeper or a boxer. Creating sport-specific 'ideal zone profiles' lets coaches see exactly where their athlete deviates from elite performers in their sport.",
+      science: "Elite athletes in different sports show distinct oculomotor signatures. Baseball hitters show superior pursuit in horizontal zones; basketball players show broad peripheral awareness; combat athletes show rapid antisaccade ability.",
+      angle: "Build reference profiles for 8-10 sports showing 'elite zone signatures.' Athletes get compared against sport-specific benchmarks, not general population. Coaches see exactly which zones to train.",
+      limitation: "Need elite athlete data to build profiles — chicken-and-egg problem. Start with literature-derived profiles, validate with real athletes over time.",
+      action: "1) Literature review: elite visual signatures by sport. 2) Create theoretical ideal profiles for 8 sports. 3) Build comparison engine (athlete vs. elite template). 4) Partner with 2-3 college programs per sport for validation.",
+      revenue: "$30-50/athlete for sport-specific report. Team packages $3,000-8,000/season. Premium feature tier.",
+      timeline: "3-5 months. Literature review + profile design + comparison UI.",
+      effortDesc: "Moderate — research-heavy, profile design, comparison algorithm, sport-specific UI.",
+      dependencies: "Literature base for elite profiles, athlete partnerships for validation, zone assessment infrastructure."
+    }
+  },
+  {
+    id: 10, title: "Pre-Season Baseline + In-Season Monitoring", subtitle: "Longitudinal tracking, concussion baseline",
+    category: "athletes", rev: 9, effort: 7, speed: 5, dr: false, sales: false, benefit: 3.64,
+    plan: {
+      opportunity: "Concussion baseline testing is mandatory in most collegiate and professional sports. Current tools (ImPACT) cost $10-15/athlete and provide minimal visual data. NeuroGaze can offer a richer baseline at lower cost while adding in-season monitoring.",
+      science: "Post-concussion oculomotor dysfunction is one of the most sensitive markers of brain injury. Baseline comparison (pre vs. post) is the gold standard for return-to-play decisions.",
+      angle: "Position as 'visual baseline + monitoring' — take a 10-minute baseline pre-season, then quick 3-minute check-ins throughout the season. Any deviation from baseline triggers alert. Concussion comparison is just one use case.",
+      limitation: "Concussion claims require careful regulatory positioning. Can't market as concussion diagnostic without FDA clearance. Position as 'oculomotor monitoring' with concussion as an application, not the primary claim.",
+      action: "1) Build longitudinal profile system (baseline → check-in comparisons). 2) Create deviation scoring algorithm. 3) Design return-to-play decision support report. 4) Regulatory review of marketing claims.",
+      revenue: "$15-25/athlete for baseline + 4 check-ins. Team license $8,000-20,000/season. Concussion market is $500M+.",
+      timeline: "8-14 months. Longitudinal system + regulatory positioning takes time.",
+      effortDesc: "High — longitudinal data architecture, deviation algorithms, regulatory compliance, athletic trainer workflows.",
+      dependencies: "Baseline assessment protocol, longitudinal database, athletic trainer buy-in, regulatory review."
+    }
+  },
+  {
+    id: 11, title: "Combat Sports Blind Spot Map", subtitle: "Fighter silhouette overlaid with gaze weaknesses",
+    category: "athletes", rev: 7, effort: 4, speed: 6, dr: false, sales: false, benefit: 5.75,
+    plan: {
+      opportunity: "Fighters get hit where they can't see. Mapping gaze weaknesses onto a fighter silhouette gives coaches a visual 'heat map' of vulnerability zones — where the athlete's visual response is slowest.",
+      science: "Reaction time varies by visual field quadrant. Fighters with slower response in specific zones are statistically more likely to absorb strikes from those angles. This maps directly to defensive training priorities.",
+      angle: "Take NeuroGaze zone data → overlay onto a fighter silhouette showing vulnerability zones in red/yellow/green. Coaches instantly see 'you're slow to respond from upper-left' and can design defensive drills accordingly.",
+      limitation: "Visual field reactivity doesn't perfectly map to strike vulnerability (there's also physical positioning, habit, etc.). Need to be clear this is one input among many.",
+      action: "1) Build fighter silhouette overlay visualization. 2) Map NeuroGaze zones to strike-angle vulnerability. 3) Create defensive drill recommendations per zone. 4) Partner with 3-5 MMA/boxing gyms.",
+      revenue: "$50-100/fighter per assessment. Gym partnership $500-2,000/mo. Camp packages for fight prep $500-1,000.",
+      timeline: "3-5 months. Visualization + zone-to-vulnerability mapping.",
+      effortDesc: "Moderate — visualization design, mapping logic, sport-specific recommendations.",
+      dependencies: "Reaction time by zone data, fighter silhouette design, combat sports domain expertise."
+    }
+  },
+  {
+    id: 12, title: "Esports Entry Market", subtitle: "FPS/MOBA reaction time, young tech-comfortable demographic",
+    category: "athletes", rev: 7, effort: 3, speed: 8, dr: false, sales: true, benefit: 8.67,
+    plan: {
+      opportunity: "Esports athletes are young, tech-native, obsessed with performance metrics, and already sitting at computers with webcams. They're the perfect early adopter for a webcam-based visual performance tool. No gatekeepers, direct B2C.",
+      science: "Professional esports players show significantly faster visual processing speeds, superior peripheral awareness, and better antisaccade performance than casual gamers. These are measurable and trainable.",
+      angle: "Launch 'NeuroGaze for Gamers' — emphasize reaction time, visual processing speed, and peripheral awareness. Gamify the assessment with leaderboards. Sell direct to players, then to esports orgs.",
+      limitation: "Gamers are price-sensitive and skeptical. Need to prove value quickly. Competitor landscape includes Aim Lab and similar tools. Differentiation is the science backing.",
+      action: "1) Create gamer-branded landing page and UI skin. 2) Build leaderboard/ranking system. 3) Target FPS/MOBA subreddits and Discord servers. 4) Partner with 2-3 esports content creators.",
+      revenue: "$9.99/mo individual or $29.99/mo for teams. Esports org licenses $1,000-5,000/mo. Low CAC via community marketing.",
+      timeline: "4-8 weeks. Mostly marketing/positioning — core product exists.",
+      effortDesc: "Low — UI reskin, leaderboard, marketing. Product substance already exists.",
+      dependencies: "Keyboard response module (idea #8) for full value, but can launch with gaze-only initially."
+    }
+  },
+  {
+    id: 13, title: "S&C Integration", subtitle: "Zone asymmetry drives unilateral corrective training",
+    category: "athletes", rev: 6, effort: 3, speed: 7, dr: false, sales: true, benefit: 7.50,
+    plan: {
+      opportunity: "Strength & conditioning coaches want objective data to prescribe unilateral corrective work. Zone asymmetry data from NeuroGaze gives them a visual-motor reason to program specific single-leg, single-arm, or rotational exercises.",
+      science: "Visual-motor asymmetry correlates with physical movement asymmetry. When the brain processes one visual field more slowly, the corresponding motor output is often less precise — leading to compensation patterns.",
+      angle: "Create an 'S&C Prescription' output: zone asymmetry data → specific corrective exercise recommendations. Partner with S&C coaches who want objective justification for their programming choices.",
+      limitation: "The visual→physical asymmetry link is correlational, not proven causal. Need to position as 'additional data point' not 'diagnosis.' S&C coaches may be skeptical of eye-tracking data.",
+      action: "1) Build zone-to-exercise mapping library. 2) Create S&C coach report template. 3) Partner with 3-5 S&C coaches for pilot testing. 4) Present at NSCA or CSCCa conference.",
+      revenue: "$200-500/athlete for integrated assessment + prescription. Facility license $1,000-3,000/mo.",
+      timeline: "4-8 weeks. Exercise mapping + report template. Sales-driven.",
+      effortDesc: "Low — exercise library curation, report template, partnership development.",
+      dependencies: "Zone asymmetry calculation (idea #7), exercise science advisory, S&C coach relationships."
+    }
+  },
+  {
+    id: 14, title: "Occupational Therapy Clinics", subtitle: "Pediatric OT — sensorimotor integration",
+    category: "adjacent", rev: 7, effort: 3, speed: 5, dr: false, sales: true, benefit: 7.17,
+    plan: {
+      opportunity: "Pediatric OT clinics assess visual-motor integration daily but lack objective measurement tools beyond subjective observation. NeuroGaze gives OTs quantifiable pre/post data for treatment planning and insurance documentation.",
+      science: "Oculomotor control is a core component of sensorimotor integration. OTs already work on visual tracking, convergence, and eye-hand coordination — NeuroGaze quantifies what they currently eyeball.",
+      angle: "Sell to OT clinics as a measurement tool: objective baseline → track progress → document outcomes for insurance. OTs love data that justifies continued treatment authorization.",
+      limitation: "OT clinics are small businesses with tight margins. Price sensitivity is high. Need to show ROI through insurance reimbursement documentation value.",
+      action: "1) Create OT-specific report template with insurance-friendly language. 2) Develop treatment progress tracking dashboard. 3) Target pediatric OT Facebook groups and AOTA channels. 4) Offer 30-day free trial.",
+      revenue: "$99-199/mo per practice. Low volume per clinic but there are 40,000+ OT practices in the US.",
+      timeline: "2-4 months. Mostly sales + report customization.",
+      effortDesc: "Low — report template, OT-specific language, sales outreach.",
+      dependencies: "Basic NeuroGaze assessment, OT-specific report template, insurance documentation format knowledge."
+    }
+  },
+  {
+    id: 15, title: "Neurological Rehabilitation", subtitle: "Stroke/TBI/concussion recovery tracking",
+    category: "adjacent", rev: 8, effort: 7, speed: 3, dr: true, sales: false, benefit: 2.93,
+    plan: {
+      opportunity: "Neuro rehab facilities need objective recovery metrics. Oculomotor function is one of the most sensitive indicators of neurological recovery — and one of the hardest to measure outside a lab. NeuroGaze can bring lab-grade measurement to the clinic.",
+      science: "Post-stroke and post-TBI patients show specific, measurable oculomotor deficits: slowed saccades, impaired pursuit, gaze-holding nystagmus. Recovery is trackable through serial assessments.",
+      angle: "Position as a neuro recovery tracking tool: serial assessments show improvement curves, plateau detection, and treatment response. Clinicians get objective data for treatment modification decisions.",
+      limitation: "Medical device classification risk if marketed for clinical decision-making. Need very careful regulatory positioning. Longer sales cycle with hospital systems.",
+      action: "1) Consult with neuro rehab specialists on desired metrics. 2) Build serial comparison (session-over-session) tracking. 3) Regulatory assessment (FDA classification risk). 4) Pilot with 2-3 outpatient neuro rehab facilities.",
+      revenue: "$500-1,000/mo per facility or per-patient pricing. Neuro rehab is a $10B+ market.",
+      timeline: "12-18 months. Regulatory + clinical validation + sales cycle.",
+      effortDesc: "High — clinical validation, regulatory compliance, medical sales cycle, specialized protocols.",
+      dependencies: "Clinical validation study, regulatory strategy, neurologist advisory board, serial assessment infrastructure."
+    }
+  },
+  {
+    id: 16, title: "Military/Tactical Readiness (SBIR)", subtitle: "SBIR grant eligible, field-deployable screening",
+    category: "adjacent", rev: 9, effort: 8, speed: 2, dr: true, sales: false, benefit: 2.63,
+    plan: {
+      opportunity: "DoD spends billions on warfighter readiness assessment. A field-deployable visual readiness screening that runs on a laptop + webcam fits SBIR/STTR funding perfectly. Grants fund development; contracts fund deployment.",
+      science: "Military research shows oculomotor function degrades predictably with fatigue, sleep deprivation, and stress — all critical for operational readiness decisions. DARPA has funded multiple gaze-tracking research programs.",
+      angle: "Apply for SBIR Phase I ($150-250K) to validate NeuroGaze for tactical readiness assessment. Develop field-deployable protocol that runs on standard military laptops. Target fatigue/readiness use case.",
+      limitation: "SBIR process is 6-18 months from application to award. Military sales cycles are very long. Need security clearance considerations. High effort but potentially transformative.",
+      action: "1) Research open SBIR/STTR topics matching NeuroGaze capabilities. 2) Build DoD-relevant demo (fatigue detection use case). 3) Attend military health conference. 4) Write Phase I proposal.",
+      revenue: "SBIR Phase I: $150-250K. Phase II: $750K-1.5M. Production contract: $5M+. Long timeline but massive ceiling.",
+      timeline: "18-36 months to revenue. SBIR timeline is fixed: 6-month proposal cycle + 6-12 month Phase I.",
+      effortDesc: "Very high — grant writing, DoD compliance, security requirements, specialized protocol development.",
+      dependencies: "SBIR topic alignment, DoD relationships, fatigue-specific validation, field-deployable tech stack."
+    }
+  },
+  {
+    id: 17, title: "Senior Cognitive Health", subtitle: "Antisaccade as Alzheimer's early marker (Year 3+)",
+    category: "adjacent", rev: 7, effort: 8, speed: 2, dr: true, sales: false, benefit: 2.19,
+    plan: {
+      opportunity: "Alzheimer's diagnosis comes years after cognitive decline begins. Antisaccade performance degrades early in neurodegenerative disease — potentially years before clinical symptoms. A simple screening could drive earlier intervention.",
+      science: "Antisaccade error rates increase significantly in pre-clinical Alzheimer's disease, often 3-5 years before memory symptoms appear. This is one of the earliest measurable cognitive biomarkers.",
+      angle: "Year 3+ product: position NeuroGaze as a cognitive health screening for seniors. Partner with primary care, senior living facilities, and cognitive health clinics. Annual 'brain check' alongside physical.",
+      limitation: "Extremely sensitive market — false positives cause enormous anxiety. Need very high specificity. Regulatory requirements are stringent for disease screening claims. Long development timeline.",
+      action: "1) Literature review on antisaccade + neurodegeneration. 2) Design senior-appropriate protocol (larger stimuli, simplified UI). 3) Academic research partnership for validation. 4) Regulatory pathway assessment.",
+      revenue: "$50-100/screening. Population of 55M+ adults over 65. Partner with health systems at $10K-50K/yr per facility.",
+      timeline: "3-5 years. Academic validation + regulatory clearance required before any commercial activity.",
+      effortDesc: "Very high — multi-year validation, regulatory pathway, senior-appropriate UX, clinical partnerships.",
+      dependencies: "Academic research partnership, longitudinal validation study, regulatory strategy, geriatric advisory board."
+    }
+  },
+  {
+    id: 18, title: "Vision Therapy Channel Partners", subtitle: "White-label $99/mo per practice",
+    category: "adjacent", rev: 8, effort: 2, speed: 8, dr: false, sales: true, benefit: 14.00,
+    plan: {
+      opportunity: "There are 3,000+ vision therapy practices in the US already doing oculomotor training. They need objective measurement tools but can't afford $50K+ lab equipment. White-labeled NeuroGaze at $99/mo is an instant value proposition.",
+      science: "Vision therapy is a $2B+ market already built on the premise that oculomotor function is trainable. Practitioners need pre/post measurement to justify treatment. NeuroGaze provides exactly this.",
+      angle: "White-label the platform for vision therapy practices. They get their own branding, patient portal, and progress tracking. $99/mo removes all friction. Sell through COVD conferences and OD networks.",
+      limitation: "Vision therapists may already have their own tools/methods. Need to show NeuroGaze adds value beyond what they're doing. White-label means less brand building for NeuroGaze.",
+      action: "1) Build white-label configuration (logo, colors, clinic name). 2) Create patient progress tracking dashboard. 3) Attend COVD annual meeting. 4) Launch referral program for ODs.",
+      revenue: "$99/mo per practice × 3,000 practices = $3.6M TAM. Even 10% penetration = $360K ARR. Plus per-patient overage fees.",
+      timeline: "4-6 weeks. White-label config + sales push. Product exists.",
+      effortDesc: "Very low — white-label UI layer, sales materials, conference attendance.",
+      dependencies: "Basic platform exists, white-label configuration system, COVD/OD network access."
+    }
+  },
+  {
+    id: 19, title: "Hardware Partnership (Tobii)", subtitle: "Pro tier with research-grade accuracy",
+    category: "adjacent", rev: 8, effort: 7, speed: 4, dr: false, sales: false, benefit: 3.14,
+    plan: {
+      opportunity: "Webcam-based gaze tracking has inherent accuracy limits (~2-5° visual angle). Partnering with Tobii to support their eye-tracking hardware creates a 'Pro' tier with research-grade accuracy for customers who need it.",
+      science: "Research-grade eye trackers (Tobii Pro, EyeLink) achieve <0.5° accuracy vs webcam's 2-5°. For clinical and research applications, this precision difference matters significantly.",
+      angle: "Build Tobii SDK integration as a 'NeuroGaze Pro' tier. Same assessment, same reports, but with research-grade data. Sell to universities, research labs, and clinical facilities that need precision.",
+      limitation: "Tobii hardware costs $1,000-30,000 per unit. Limits market to institutional buyers. Integration engineering is substantial. Tobii may not be interested in partnership.",
+      action: "1) Contact Tobii partnership team. 2) Prototype SDK integration with Tobii Nano/Pro. 3) Validate accuracy improvement vs webcam. 4) Design Pro tier pricing and positioning.",
+      revenue: "$299-499/mo for Pro tier or annual research licenses $3,000-10,000. Hardware referral fees from Tobii potentially.",
+      timeline: "6-12 months. SDK integration + Tobii relationship building.",
+      effortDesc: "High — SDK integration, hardware compatibility testing, partnership negotiation, pro-tier infrastructure.",
+      dependencies: "Tobii partnership agreement, SDK access, pro-tier billing infrastructure, institutional sales capability."
+    }
+  },
+  {
+    id: 20, title: "Open Data Moat", subtitle: "Anonymized benchmark database, network effect",
+    category: "adjacent", rev: 9, effort: 5, speed: 4, dr: false, sales: false, benefit: 4.80,
+    plan: {
+      opportunity: "Every NeuroGaze assessment generates data. Aggregated and anonymized, this becomes the world's largest oculomotor benchmark database — a defensible moat that no competitor can replicate without the same user base.",
+      science: "Normative databases are the foundation of clinical assessment. The larger and more diverse the norm sample, the more accurate the percentile rankings. This creates a network effect: more users → better norms → more users.",
+      angle: "Anonymize and aggregate all assessment data into a benchmark database. Use it to: 1) Improve percentile accuracy, 2) Publish research papers, 3) License data to researchers, 4) Create an API for third-party developers.",
+      limitation: "Privacy and consent complexities. HIPAA if any health data. International data regulations (GDPR). Need bullet-proof anonymization. Takes time to accumulate meaningful sample sizes.",
+      action: "1) Design anonymization pipeline (k-anonymity, differential privacy). 2) Update consent flows to include research use. 3) Build aggregate statistics API. 4) Publish first normative data paper.",
+      revenue: "Indirect value initially (better product → more users). Direct revenue via data licensing ($50K-200K/yr to researchers) and API access ($500-2,000/mo per developer).",
+      timeline: "6-12 months to build infrastructure. 18-24 months to accumulate meaningful sample sizes.",
+      effortDesc: "Moderate — privacy engineering, consent management, aggregation pipeline, API development.",
+      dependencies: "Sufficient user base for meaningful norms, privacy/consent infrastructure, legal review, research publication."
+    }
+  }
+];
+
+// STATE
+let currentSort = 'benefit';
+let currentFilter = 'all';
+
+function getScoreClass(score) {
+  if (score >= 8) return 'high';
+  if (score >= 5) return 'mid';
+  return 'low';
+}
+
+function getCategoryLabel(cat) {
+  return cat === 'children' ? 'Children/Schools' : cat === 'athletes' ? 'Athletes' : 'Adjacent Markets';
+}
+
+function getCategoryBadgeClass(cat) {
+  return `badge-${cat}`;
+}
+
+function filterIdeas(ideas, filter) {
+  if (filter === 'all') return ideas;
+  if (filter === 'children') return ideas.filter(i => i.category === 'children');
+  if (filter === 'athletes') return ideas.filter(i => i.category === 'athletes');
+  if (filter === 'adjacent') return ideas.filter(i => i.category === 'adjacent');
+  if (filter === 'sales') return ideas.filter(i => i.sales);
+  if (filter === 'nodr') return ideas.filter(i => !i.dr);
+  return ideas;
+}
+
+function sortIdeas(ideas, sort) {
+  const sorted = [...ideas];
+  if (sort === 'benefit') sorted.sort((a, b) => b.benefit - a.benefit);
+  if (sort === 'revenue') sorted.sort((a, b) => b.rev - a.rev);
+  if (sort === 'effort') sorted.sort((a, b) => a.effort - b.effort);
+  if (sort === 'speed') sorted.sort((a, b) => b.speed - a.speed);
+  return sorted;
+}
+
+function updateStats() {
+  const launchReady = ideas.filter(i => i.speed >= 7).length;
+  const needCode = ideas.filter(i => !i.sales && i.effort >= 3).length;
+  const needDr = ideas.filter(i => i.dr).length;
+  document.getElementById('statsBar').innerHTML = `
+    <div class="stat-item"><span>${launchReady}</span> launch-ready ideas (speed ≥ 7)</div>
+    <div class="stat-item"><span>${needCode}</span> need code development</div>
+    <div class="stat-item"><span>${needDr}</span> need clinical review</div>
+    <div class="stat-item"><span>${ideas.filter(i => i.sales).length}</span> sales-only launches</div>
+  `;
+}
+
+function renderCards() {
+  const filtered = filterIdeas(ideas, currentFilter);
+  const sorted = sortIdeas(filtered, currentSort);
+  const grid = document.getElementById('cardGrid');
+
+  grid.innerHTML = sorted.map(idea => `
+    <div class="card" onclick="openModal(${idea.id})">
+      <div class="card-header">
+        <div>
+          <div class="card-number">#${idea.id} — Part ${idea.category === 'children' ? '1' : idea.category === 'athletes' ? '2' : '3'}</div>
+          <div class="card-title">${idea.title}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="benefit-score ${getScoreClass(idea.benefit)}">${idea.benefit.toFixed(1)}</div>
+          <div class="benefit-label">Benefit</div>
+        </div>
+      </div>
+      <div class="card-badges">
+        <span class="badge ${getCategoryBadgeClass(idea.category)}">${getCategoryLabel(idea.category)}</span>
+        ${idea.dr ? '<span class="badge badge-dr">Dr. Review</span>' : ''}
+        ${idea.sales ? '<span class="badge badge-sales">Sales Only</span>' : ''}
+      </div>
+      <div class="metrics">
+        <div class="metric">
+          <div class="metric-label">Revenue ${idea.rev}/10</div>
+          <div class="metric-bar"><div class="metric-fill rev" style="width:${idea.rev * 10}%"></div></div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Effort ${idea.effort}/10</div>
+          <div class="metric-bar"><div class="metric-fill eff" style="width:${idea.effort * 10}%"></div></div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">Speed ${idea.speed}/10</div>
+          <div class="metric-bar"><div class="metric-fill spd" style="width:${idea.speed * 10}%"></div></div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openModal(id) {
+  const idea = ideas.find(i => i.id === id);
+  const modal = document.getElementById('modal');
+  const content = document.getElementById('modalContent');
+
+  content.innerHTML = `
+    <button class="modal-close" onclick="closeModal()">&times;</button>
+    <div class="card-number" style="margin-bottom:4px">#${idea.id}</div>
+    <div class="modal-title">${idea.title}</div>
+    <p style="font-size:0.78rem;color:var(--text-muted);margin-bottom:16px">${idea.subtitle}</p>
+    <div class="modal-meta">
+      <span class="badge ${getCategoryBadgeClass(idea.category)}">${getCategoryLabel(idea.category)}</span>
+      ${idea.dr ? '<span class="badge badge-dr">Dr. Review Required</span>' : '<span class="badge badge-sales" style="background:rgba(16,185,129,0.1);color:var(--green);border-color:rgba(16,185,129,0.2)">No Dr. Review</span>'}
+      ${idea.sales ? '<span class="badge badge-sales">Sales Only</span>' : ''}
+    </div>
+    <div class="modal-scores">
+      <div class="modal-score-item">
+        <div class="val ${getScoreClass(idea.benefit)}">${idea.benefit.toFixed(2)}</div>
+        <div class="lbl">Benefit Score</div>
+      </div>
+      <div class="modal-score-item">
+        <div class="val" style="color:var(--cyan)">${idea.rev}</div>
+        <div class="lbl">Revenue</div>
+      </div>
+      <div class="modal-score-item">
+        <div class="val" style="color:var(--violet)">${idea.effort}</div>
+        <div class="lbl">Effort</div>
+      </div>
+      <div class="modal-score-item">
+        <div class="val" style="color:var(--green)">${idea.speed}</div>
+        <div class="lbl">Speed</div>
+      </div>
+    </div>
+    <div class="plan-section"><h3>The Opportunity</h3><p>${idea.plan.opportunity}</p></div>
+    <div class="plan-section"><h3>The Science</h3><p>${idea.plan.science}</p></div>
+    <div class="plan-section"><h3>The NeuroGaze Angle</h3><p>${idea.plan.angle}</p></div>
+    <div class="plan-section"><h3>Honest Limitation</h3><p>${idea.plan.limitation}</p></div>
+    <div class="plan-section"><h3>Action Required</h3><p>${idea.plan.action}</p></div>
+    <div class="plan-section"><h3>Revenue Model</h3><p>${idea.plan.revenue}</p></div>
+    <div class="plan-section"><h3>Timeline</h3><p>${idea.plan.timeline}</p></div>
+    <div class="plan-section"><h3>Effort Estimate</h3><p>${idea.plan.effortDesc}</p></div>
+    <div class="plan-section"><h3>Dependencies</h3><p>${idea.plan.dependencies}</p></div>
+  `;
+
+  modal.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+// Event listeners
+document.querySelectorAll('[data-sort]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-sort]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentSort = btn.dataset.sort;
+    renderCards();
+  });
+});
+
+document.querySelectorAll('[data-filter]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    renderCards();
+  });
+});
+
+document.getElementById('modal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeModal();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModal();
+});
+
+// Init
+updateStats();
+renderCards();
+</script>
+</body>
+</html>
